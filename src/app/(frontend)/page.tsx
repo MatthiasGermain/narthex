@@ -1,11 +1,11 @@
 import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
 import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
 import React from 'react'
-import { fileURLToPath } from 'url'
 
 import config from '@/payload.config'
-import './styles.css'
+import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { Button } from '@/components/ui/button'
 
 export default async function HomePage() {
   const headers = await getHeaders()
@@ -13,47 +13,38 @@ export default async function HomePage() {
   const payload = await getPayload({ config: payloadConfig })
   const { user } = await payload.auth({ headers })
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+  // Résolution du tenant depuis le middleware
+  const tenantSlug = getTenantSlug(headers)
+  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
+
+  // 404 si un slug est fourni mais ne correspond à aucune église
+  if (tenantSlug && !tenant) {
+    notFound()
+  }
 
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
-        </div>
-      </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
+      {tenant ? (
+        <>
+          <h1 className="text-4xl font-bold">{tenant.name}</h1>
+          <p className="text-muted-foreground">
+            Tenant : <code className="rounded bg-muted px-2 py-1 text-sm">{tenantSlug}</code>
+          </p>
+        </>
+      ) : (
+        <>
+          {!user && <h1 className="text-4xl font-bold">Narthex</h1>}
+          {user && <h1 className="text-4xl font-bold">Bienvenue, {user.email}</h1>}
+          <p className="text-muted-foreground">
+            Aucun tenant d\u00e9tect\u00e9. Essayez <code className="rounded bg-muted px-2 py-1 text-sm">?tenant=votre-slug</code>
+          </p>
+        </>
+      )}
+      <Button asChild>
+        <a href="/admin" target="_blank" rel="noopener noreferrer">
+          Admin Payload
         </a>
-      </div>
+      </Button>
     </div>
   )
 }
