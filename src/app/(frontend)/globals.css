@@ -1,1 +1,172 @@
 @import "tailwindcss";
+
+@theme inline {
+  /* ── Shadcn semantic tokens → CSS custom properties ── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── Spotlight brand colors (utilities: bg-raisin, text-indigo, etc.) ── */
+  --color-raisin: #1e2952;
+  --color-indigo: #8B80F9;
+  --color-sunglow: #FCCA46;
+  --color-violet: #c9a0dc;
+  --color-cream: #f4f0ec;
+
+  /* ── Border radius ── */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* ── Font families ── */
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+  --font-heading: var(--font-avenir), system-ui, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Light mode — Spotlight identity
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --radius: 0.625rem;
+
+  --background: #f4f0ec;
+  --foreground: #1e2952;
+
+  --card: #ffffff;
+  --card-foreground: #1e2952;
+  --popover: #ffffff;
+  --popover-foreground: #1e2952;
+
+  --primary: #8B80F9;
+  --primary-foreground: #ffffff;
+
+  --secondary: #e8e0f8;
+  --secondary-foreground: #1e2952;
+
+  --muted: #e8e3de;
+  --muted-foreground: #5a5f73;
+
+  --accent: #FCCA46;
+  --accent-foreground: #1e2952;
+
+  --destructive: #e53e3e;
+  --destructive-foreground: #ffffff;
+
+  --border: #d8d2cc;
+  --input: #d8d2cc;
+  --ring: #8B80F9;
+
+  --chart-1: #8B80F9;
+  --chart-2: #c9a0dc;
+  --chart-3: #FCCA46;
+  --chart-4: #1e2952;
+  --chart-5: #f4f0ec;
+
+  --sidebar-background: #1e2952;
+  --sidebar-foreground: #f4f0ec;
+  --sidebar-primary: #8B80F9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a3668;
+  --sidebar-accent-foreground: #f4f0ec;
+  --sidebar-border: #2a3668;
+  --sidebar-ring: #8B80F9;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Dark mode
+   ═══════════════════════════════════════════════════════ */
+.dark {
+  --background: #141b38;
+  --foreground: #f4f0ec;
+
+  --card: #1e2952;
+  --card-foreground: #f4f0ec;
+  --popover: #1e2952;
+  --popover-foreground: #f4f0ec;
+
+  --primary: #8B80F9;
+  --primary-foreground: #ffffff;
+
+  --secondary: #2a3668;
+  --secondary-foreground: #f4f0ec;
+
+  --muted: #2a3668;
+  --muted-foreground: #9da3b8;
+
+  --accent: #FCCA46;
+  --accent-foreground: #1e2952;
+
+  --destructive: #e53e3e;
+  --destructive-foreground: #ffffff;
+
+  --border: #2a3668;
+  --input: #2a3668;
+  --ring: #8B80F9;
+
+  --chart-1: #8B80F9;
+  --chart-2: #c9a0dc;
+  --chart-3: #FCCA46;
+  --chart-4: #f4f0ec;
+  --chart-5: #2a3668;
+
+  --sidebar-background: #0f1429;
+  --sidebar-foreground: #f4f0ec;
+  --sidebar-primary: #8B80F9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e2952;
+  --sidebar-accent-foreground: #f4f0ec;
+  --sidebar-border: #1e2952;
+  --sidebar-ring: #8B80F9;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Base styles
+   ═══════════════════════════════════════════════════════ */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+}
