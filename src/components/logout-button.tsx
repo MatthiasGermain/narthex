@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function LogoutButton() {
@@ -20,8 +21,9 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleLogout} disabled={loading}>
-      {loading ? 'Déconnexion...' : 'Déconnexion'}
+    <Button variant="ghost" size="sm" onClick={handleLogout} disabled={loading} className="shrink-0 gap-2">
+      <LogOut className="h-4 w-4" />
+      <span className="hidden sm:inline">{loading ? 'Déconnexion...' : 'Déconnexion'}</span>
     </Button>
   )
 }

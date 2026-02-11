@@ -4,7 +4,8 @@ import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
-import { LogoutButton } from '@/components/logout-button'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const headers = await getHeaders()
@@ -30,17 +31,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   }
 
+  const churchName = tenant?.name ?? 'Narthex'
+
   return (
     <div className="min-h-screen">
-      <header className="border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="font-semibold truncate">{tenant?.name ?? 'Narthex'}</h2>
-          <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-        </div>
-        <LogoutButton />
-      </header>
-      <div className="p-4 sm:p-6">
-        {children}
+      <Sidebar churchName={churchName} />
+
+      <div className="md:pl-60 min-h-screen flex flex-col">
+        <Header churchName={churchName} userEmail={user.email} />
+
+        <main className="flex-1 p-4 sm:p-6">
+          {children}
+        </main>
       </div>
     </div>
   )

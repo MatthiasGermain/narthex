@@ -1,6 +1,7 @@
 import React from 'react'
 import { Montserrat } from 'next/font/google'
 import localFont from 'next/font/local'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const montserrat = Montserrat({
@@ -39,6 +40,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html lang="fr">
       <body className={`${montserrat.variable} ${avenir.variable} antialiased`}>
         <main>{children}</main>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   )
