@@ -3,7 +3,7 @@
  * Fonctionne côté server ET client (fonction pure, pas d'import server).
  */
 export function checkUserTenantAccess(
-  user: { role?: string; tenants?: Array<{ tenant: number | string | { id: number | string } }> },
+  user: { role?: string; tenants?: Array<{ tenant: number | string | { id: number | string } }> | null },
   tenantId: number | string,
 ): boolean {
   if (user.role === 'super-admin') return true

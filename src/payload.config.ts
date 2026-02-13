@@ -15,22 +15,36 @@ import { isSuperAdminCheck } from './access/roles'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+if (!process.env.PAYLOAD_SECRET) {
+  throw new Error('PAYLOAD_SECRET env var is required')
+}
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL env var is required')
+}
+
 export default buildConfig({
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || '',
+  cors: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [],
+  csrf: process.env.CSRF_ORIGINS ? process.env.CSRF_ORIGINS.split(',') : [],
   admin: {
     user: Users.slug,
+    meta: {
+      title: 'Narthex Admin',
+      icons: [{ url: '/narthex_favicon.png' }],
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },
   },
   collections: [Users, Media, Churches, Events],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: process.env.PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: process.env.DATABASE_URL,
     },
   }),
   sharp,

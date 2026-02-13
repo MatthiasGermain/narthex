@@ -18,6 +18,6 @@ export const isAdmin: Access = ({ req: { user } }) => {
   return role === 'super-admin' || role === 'admin-church'
 }
 
-export const isVolunteer: Access = ({ req: { user } }) => {
+export const isAuthenticated: Access = ({ req: { user } }) => {
   return Boolean(user)
 }

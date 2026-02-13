@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, CollectionBeforeChangeHook } from 'payload'
-import { isVolunteer } from '../access'
+import { isAuthenticated } from '../access'
 
 type UserWithId = {
   id?: number
@@ -20,8 +20,14 @@ const isAdminOrCreator: Access = ({ req: { user } }) => {
   const u = user as UserWithId | undefined
   if (!u) return false
   if (u.role === 'super-admin' || u.role === 'admin-church') return true
-  // Les bénévoles peuvent supprimer leurs propres événements
+  // Les bénévoles peuvent supprimer/modifier leurs propres événements
   return { createdBy: { equals: u.id } }
+}
+
+const readPublicOrAuthenticated: Access = ({ req: { user } }) => {
+  if (user) return true
+  // Visiteurs anonymes : uniquement les events publics
+  return { visibility: { equals: 'public' } }
 }
 
 export const Events: CollectionConfig = {
@@ -34,8 +40,9 @@ export const Events: CollectionConfig = {
     beforeChange: [assignCreatedBy],
   },
   access: {
-    // read et update : gérés par le plugin multi-tenant (auto-filtrage par église)
-    create: isVolunteer,
+    read: readPublicOrAuthenticated,
+    update: isAdminOrCreator,
+    create: isAuthenticated,
     delete: isAdminOrCreator,
   },
   fields: [
