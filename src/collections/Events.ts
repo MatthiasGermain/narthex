@@ -1,29 +1,23 @@
 import type { Access, CollectionConfig, CollectionBeforeChangeHook } from 'payload'
-import { isSuperAdmin, isVolunteer, belongsToChurch } from '../access'
+import { isVolunteer } from '../access'
 
-type UserWithChurch = {
+type UserWithId = {
   id?: number
   role?: string
-  church?: number | { id: number }
 }
 
-const assignDefaults: CollectionBeforeChangeHook = ({ req, operation, data }) => {
+const assignCreatedBy: CollectionBeforeChangeHook = ({ req, operation, data }) => {
   if (operation === 'create') {
-    const user = req.user as UserWithChurch | undefined
-    if (user) {
-      if (!data.church) {
-        data.church = typeof user.church === 'object' ? user.church?.id : user.church
-      }
-      if (!data.createdBy) {
-        data.createdBy = user.id
-      }
+    const user = req.user as UserWithId | undefined
+    if (user && !data.createdBy) {
+      data.createdBy = user.id
     }
   }
   return data
 }
 
 const isAdminOrCreator: Access = ({ req: { user } }) => {
-  const u = user as UserWithChurch | undefined
+  const u = user as UserWithId | undefined
   if (!u) return false
   if (u.role === 'super-admin' || u.role === 'admin-church') return true
   // Les bénévoles peuvent supprimer leurs propres événements
@@ -37,12 +31,11 @@ export const Events: CollectionConfig = {
     defaultColumns: ['title', 'date', 'time', 'visibility', 'createdBy', 'church'],
   },
   hooks: {
-    beforeChange: [assignDefaults],
+    beforeChange: [assignCreatedBy],
   },
   access: {
-    read: belongsToChurch,
+    // read et update : gérés par le plugin multi-tenant (auto-filtrage par église)
     create: isVolunteer,
-    update: belongsToChurch,
     delete: isAdminOrCreator,
   },
   fields: [

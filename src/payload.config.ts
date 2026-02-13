@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -9,6 +10,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Churches } from './collections/Churches'
 import { Events } from './collections/Events'
+import { isSuperAdminCheck } from './access/roles'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -32,5 +34,19 @@ export default buildConfig({
     },
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    multiTenantPlugin({
+      tenantsSlug: 'churches',
+      tenantField: { name: 'church' },
+      userHasAccessToAllTenants: (user) => isSuperAdminCheck(user),
+      collections: {
+        events: {
+          customTenantField: true,
+        },
+        media: {},
+      },
+      useTenantsCollectionAccess: false,
+      cleanupAfterTenantDelete: true,
+    }),
+  ],
 })

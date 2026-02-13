@@ -127,10 +127,12 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   role: 'super-admin' | 'admin-church' | 'volunteer';
-  /**
-   * Église rattachée (obligatoire sauf Super-Admin)
-   */
-  church?: (number | null) | Church;
+  tenants?:
+    | {
+        tenant: number | Church;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -192,6 +194,7 @@ export interface Church {
  */
 export interface Media {
   id: number;
+  church?: (number | null) | Church;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -316,7 +319,12 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
-  church?: T;
+  tenants?:
+    | T
+    | {
+        tenant?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -339,6 +347,7 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
+  church?: T;
   alt?: T;
   updatedAt?: T;
   createdAt?: T;

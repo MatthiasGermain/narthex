@@ -4,8 +4,13 @@ type UserWithRole = {
   role?: 'super-admin' | 'admin-church' | 'volunteer'
 }
 
-export const isSuperAdmin: Access = ({ req: { user } }) => {
+/** Plain boolean check — pour plugin config et helpers */
+export function isSuperAdminCheck(user: unknown): boolean {
   return (user as UserWithRole)?.role === 'super-admin'
+}
+
+export const isSuperAdmin: Access = ({ req: { user } }) => {
+  return isSuperAdminCheck(user)
 }
 
 export const isAdmin: Access = ({ req: { user } }) => {

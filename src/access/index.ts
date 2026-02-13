@@ -1,2 +1,2 @@
-export { isSuperAdmin, isAdmin, isVolunteer } from './roles'
-export { belongsToChurch } from './tenant'
+export { isSuperAdmin, isSuperAdminCheck, isAdmin, isVolunteer } from './roles'
+export { belongsToChurch, getUserTenantIDs } from './tenant'

@@ -27,22 +27,7 @@ export const Users: CollectionConfig = {
       ],
       defaultValue: 'volunteer',
     },
-    {
-      name: 'church',
-      type: 'relationship',
-      relationTo: 'churches',
-      saveToJWT: true,
-      label: 'Église',
-      admin: {
-        condition: (data) => data?.role !== 'super-admin',
-        description: 'Église rattachée (obligatoire sauf Super-Admin)',
-      },
-      validate: (value: unknown, { siblingData }: { siblingData: Record<string, unknown> }) => {
-        if (siblingData?.role !== 'super-admin' && !value) {
-          return 'Une église est obligatoire pour les rôles Admin Église et Bénévole.'
-        }
-        return true
-      },
-    },
+    // Le champ 'tenants' (array de {tenant: church_id}) est injecté
+    // automatiquement par @payloadcms/plugin-multi-tenant
   ],
 }

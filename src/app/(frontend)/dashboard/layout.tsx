@@ -1,9 +1,10 @@
 import { headers as getHeaders } from 'next/headers.js'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { checkUserTenantAccess } from '@/lib/tenant-check'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 
@@ -19,19 +20,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect(`/login?redirect=${encodeURIComponent(currentPath)}`)
   }
 
-  // Résolution du tenant
+  // Résolution du tenant — obligatoire pour accéder au dashboard
   const tenantSlug = getTenantSlug(headers)
-  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
-
-  // Vérifier que l'user appartient à ce tenant (isolation cross-tenant)
-  if (tenant && user.role !== 'super-admin') {
-    const userChurchId = typeof user.church === 'object' ? (user.church as { id: number })?.id : user.church
-    if (userChurchId !== tenant.id) {
-      redirect('/login')
-    }
+  if (!tenantSlug) {
+    redirect('/login')
   }
 
-  const churchName = tenant?.name ?? 'Narthex'
+  const tenant = await getTenantBySlug(payload, tenantSlug)
+  if (!tenant) {
+    notFound()
+  }
+
+  // Vérifier que l'user appartient à ce tenant (isolation cross-tenant)
+  if (!checkUserTenantAccess(user, tenant.id)) {
+    redirect('/login')
+  }
+
+  const churchName = tenant.name
 
   return (
     <div className="min-h-screen">

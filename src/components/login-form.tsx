@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { checkUserTenantAccess } from '@/lib/tenant-check'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function LoginForm({ redirectTo }: { redirectTo?: string }) {
+export function LoginForm({ redirectTo, tenantId }: { redirectTo?: string; tenantId: number }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,6 +28,15 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 
       if (!res.ok) {
         setError('Email ou mot de passe incorrect.')
+        return
+      }
+
+      // Vérifier que l'user appartient à ce tenant
+      const data = await res.json()
+      const user = data.user
+      if (!checkUserTenantAccess(user, tenantId)) {
+        await fetch('/api/users/logout', { method: 'POST' })
+        setError('Ce compte n\'appartient pas à cette église.')
         return
       }
 
