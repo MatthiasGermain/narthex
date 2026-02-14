@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Home, Calendar } from 'lucide-react'
+import { Menu, Home, Calendar, Church } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 const navItems = [
   { href: '/dashboard', label: 'Accueil', icon: Home, exact: true },
   { href: '/dashboard/events', label: 'Événements', icon: Calendar, exact: false },
+  { href: '/dashboard/profile', label: 'Profil église', icon: Church, exact: true },
 ]
 
 export function MobileNav({ churchName }: { churchName: string }) {

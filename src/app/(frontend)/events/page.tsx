@@ -1,25 +1,32 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CalendarX } from 'lucide-react'
+import type { Metadata } from 'next'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { formatDate, formatTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
+import { TenantTheme } from '@/components/tenant-theme'
 import { Card, CardContent } from '@/components/ui/card'
 
+export const revalidate = 60
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { tenant } = await resolveTenant()
+  if (!tenant) return {}
+  return {
+    title: `Événements | ${tenant.name}`,
+    description: `Consultez les prochains événements de ${tenant.name}.`,
+    openGraph: {
+      title: `Événements | ${tenant.name}`,
+      description: `Consultez les prochains événements de ${tenant.name}.`,
+    },
+  }
+}
+
 export default async function PublicEventsPage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+  const { payload, user, tenant, branding } = await resolveTenant()
 
-  const tenantSlug = getTenantSlug(headers)
-  if (!tenantSlug) notFound()
-
-  const tenant = await getTenantBySlug(payload, tenantSlug)
   if (!tenant) notFound()
 
   const { docs: events } = await payload.find({
@@ -37,10 +44,11 @@ export default async function PublicEventsPage() {
   const upcoming = events.filter((e) => e.date >= now)
   const past = events.filter((e) => e.date < now).reverse()
 
-  const logoUrl = typeof tenant.logo === 'object' && tenant.logo?.url ? tenant.logo.url : null
+  const logoUrl = typeof branding?.logo === 'object' && branding.logo?.url ? branding.logo.url : null
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TenantTheme colors={branding?.colors || {}} />
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
       <div className="flex-1 px-4 py-8 sm:py-12">

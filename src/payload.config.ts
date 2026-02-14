@@ -9,6 +9,8 @@ import sharp from 'sharp'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Churches } from './collections/Churches'
+import { ChurchBranding } from './collections/ChurchBranding'
+import { ChurchProfiles } from './collections/ChurchProfiles'
 import { Events } from './collections/Events'
 import { isSuperAdminCheck } from './access/roles'
 
@@ -36,7 +38,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Churches, Events],
+  collections: [Users, Media, Churches, ChurchBranding, ChurchProfiles, Events],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {
@@ -58,6 +60,8 @@ export default buildConfig({
           customTenantField: true,
         },
         media: {},
+        'church-branding': {},
+        'church-profiles': {},
       },
       useTenantsCollectionAccess: false,
       cleanupAfterTenantDelete: true,

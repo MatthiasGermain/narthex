@@ -1,29 +1,43 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { getPayload } from 'payload'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Calendar, ArrowRight } from 'lucide-react'
+import type { Metadata } from 'next'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { formatDate, formatTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
+import { TenantTheme } from '@/components/tenant-theme'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
-export default async function HomePage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+export const revalidate = 60
 
-  const tenantSlug = getTenantSlug(headers)
+export async function generateMetadata(): Promise<Metadata> {
+  const { tenant } = await resolveTenant()
+  if (!tenant) {
+    return {
+      title: 'Narthex — Plateforme pour les églises',
+      description: 'Narthex remplace WordPress pour les églises francophones.',
+    }
+  }
+  return {
+    title: tenant.name,
+    description: `Bienvenue à ${tenant.name}. Découvrez nos événements et rejoignez notre communauté.`,
+    openGraph: {
+      title: tenant.name,
+      description: `Bienvenue à ${tenant.name}. Découvrez nos événements et rejoignez notre communauté.`,
+    },
+  }
+}
+
+export default async function HomePage() {
+  const { payload, user, tenant, branding } = await resolveTenant()
 
   // Pas de tenant → page Narthex générique
-  if (!tenantSlug) {
+  if (!tenant) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-        <img src="/brand/logo_noir_sans_fond.svg" alt="Narthex" className="h-12" />
+        <Image src="/brand/logo_noir_sans_fond.svg" alt="Narthex" width={180} height={48} className="h-12 w-auto" />
         <h1 className="text-2xl font-heading font-bold">Narthex</h1>
         <p className="text-muted-foreground text-center max-w-md">
           Plateforme pour les églises. Accédez au site de votre église via son domaine.
@@ -31,9 +45,6 @@ export default async function HomePage() {
       </div>
     )
   }
-
-  const tenant = await getTenantBySlug(payload, tenantSlug)
-  if (!tenant) notFound()
 
   // Fetch 3 prochains événements publics
   const { docs: upcomingEvents } = await payload.find({
@@ -48,10 +59,11 @@ export default async function HomePage() {
     overrideAccess: true,
   })
 
-  const logoUrl = typeof tenant.logo === 'object' && tenant.logo?.url ? tenant.logo.url : null
+  const logoUrl = typeof branding?.logo === 'object' && branding.logo?.url ? branding.logo.url : null
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TenantTheme colors={branding?.colors || {}} />
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
       {/* Hero */}

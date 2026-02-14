@@ -1,10 +1,7 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { getPayload } from 'payload'
 import Link from 'next/link'
 import { CalendarPlus, CalendarX } from 'lucide-react'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { formatDateShort, formatTime } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,15 +32,9 @@ function canUserDelete(
 }
 
 export default async function EventsPage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+  const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
-
-  const tenantSlug = getTenantSlug(headers)
-  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
   if (!tenant) return null
 
   const { docs: events } = await payload.find({

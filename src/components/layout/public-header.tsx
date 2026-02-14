@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, Home, Calendar, LogIn, LayoutDashboard } from 'lucide-react'
+import { Menu, Home, Calendar, Info, LogIn, LayoutDashboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -12,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 const navItems = [
   { href: '/', label: 'Accueil', icon: Home, exact: true },
   { href: '/events', label: 'Événements', icon: Calendar, exact: false },
+  { href: '/about', label: 'À propos', icon: Info, exact: false },
 ]
 
 interface PublicHeaderProps {
@@ -34,9 +36,9 @@ export function PublicHeader({ churchName, logoUrl, isLoggedIn }: PublicHeaderPr
         {/* Logo + Church name */}
         <Link href="/" className="flex items-center gap-3 min-w-0">
           {logoUrl ? (
-            <img src={logoUrl} alt={churchName} className="h-8 w-8 rounded object-contain" />
+            <Image src={logoUrl} alt={churchName} width={32} height={32} className="h-8 w-8 rounded object-contain" />
           ) : (
-            <img src="/brand/pictogramme_noir_sans_fond.svg" alt="Narthex" className="h-7 w-7" />
+            <Image src="/brand/pictogramme_noir_sans_fond.svg" alt="Narthex" width={28} height={28} className="h-7 w-7" />
           )}
           <span className="font-heading font-bold text-sm truncate">{churchName}</span>
         </Link>
@@ -85,9 +87,9 @@ export function PublicHeader({ churchName, logoUrl, isLoggedIn }: PublicHeaderPr
             <SheetHeader className="px-4 py-4">
               <SheetTitle className="flex items-center gap-3">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={churchName} className="h-7 w-7 rounded object-contain" />
+                  <Image src={logoUrl} alt={churchName} width={28} height={28} className="h-7 w-7 rounded object-contain" />
                 ) : (
-                  <img src="/brand/pictogramme_noir_sans_fond.svg" alt="Narthex" className="h-7 w-7" />
+                  <Image src="/brand/pictogramme_noir_sans_fond.svg" alt="Narthex" width={28} height={28} className="h-7 w-7" />
                 )}
                 <span className="font-heading text-sm font-bold truncate">{churchName}</span>
               </SheetTitle>

@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     churches: Church;
+    'church-branding': ChurchBranding;
+    'church-profiles': ChurchProfile;
     events: Event;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -81,6 +83,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     churches: ChurchesSelect<false> | ChurchesSelect<true>;
+    'church-branding': ChurchBrandingSelect<false> | ChurchBrandingSelect<true>;
+    'church-profiles': ChurchProfilesSelect<false> | ChurchProfilesSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -171,17 +175,6 @@ export interface Church {
         id?: string | null;
       }[]
     | null;
-  logo?: (number | null) | Media;
-  colors?: {
-    /**
-     * Code hexadécimal (ex: #1a73e8)
-     */
-    primary?: string | null;
-    /**
-     * Code hexadécimal (ex: #f5f5f5)
-     */
-    secondary?: string | null;
-  };
   settings?: {
     enabledModules?: 'events'[] | null;
   };
@@ -225,6 +218,102 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * Charte graphique : logo, favicon et couleurs
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "church-branding".
+ */
+export interface ChurchBranding {
+  id: number;
+  church?: (number | null) | Church;
+  /**
+   * Logo principal (PNG/SVG, fond transparent, min 200×60)
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Icône carrée pour l'onglet navigateur (PNG/SVG, 192×192 recommandé)
+   */
+  favicon?: (number | null) | Media;
+  colors?: {
+    /**
+     * Boutons, liens, accents (ex: #1a73e8)
+     */
+    primary?: string | null;
+    /**
+     * Fonds secondaires, hover (ex: #e8e0f8)
+     */
+    secondary?: string | null;
+    /**
+     * Highlights, CTA (ex: #FCCA46). Défaut : Sunglow
+     */
+    accent?: string | null;
+    /**
+     * Texte principal (ex: #1e2952). Défaut : Raisin
+     */
+    foreground?: string | null;
+    /**
+     * Fond de page (ex: #f4f0ec). Défaut : Cream
+     */
+    background?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Contenu public : présentation, horaires, contact
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "church-profiles".
+ */
+export interface ChurchProfile {
+  id: number;
+  church?: (number | null) | Church;
+  /**
+   * Texte de présentation affiché sur la page « À propos » (2-3 paragraphes)
+   */
+  description?: string | null;
+  address?: {
+    street?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  contact?: {
+    email?: string | null;
+    /**
+     * Ex: 01 23 45 67 89
+     */
+    phone?: string | null;
+    /**
+     * URL complète (ex: https://exemple.com)
+     */
+    website?: string | null;
+  };
+  /**
+   * Cultes réguliers (dimanche matin, jeudi soir, etc.)
+   */
+  services?:
+    | {
+        /**
+         * Ex: Culte dominical, Prière du jeudi
+         */
+        label: string;
+        day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+        /**
+         * Format 24h (ex: 10:30)
+         */
+        time: string;
+        id?: string | null;
+      }[]
+    | null;
+  social?: {
+    facebook?: string | null;
+    instagram?: string | null;
+    youtube?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -284,6 +373,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'churches';
         value: number | Church;
+      } | null)
+    | ({
+        relationTo: 'church-branding';
+        value: number | ChurchBranding;
+      } | null)
+    | ({
+        relationTo: 'church-profiles';
+        value: number | ChurchProfile;
       } | null)
     | ({
         relationTo: 'events';
@@ -416,17 +513,69 @@ export interface ChurchesSelect<T extends boolean = true> {
         domain?: T;
         id?: T;
       };
+  settings?:
+    | T
+    | {
+        enabledModules?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "church-branding_select".
+ */
+export interface ChurchBrandingSelect<T extends boolean = true> {
+  church?: T;
   logo?: T;
+  favicon?: T;
   colors?:
     | T
     | {
         primary?: T;
         secondary?: T;
+        accent?: T;
+        foreground?: T;
+        background?: T;
       };
-  settings?:
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "church-profiles_select".
+ */
+export interface ChurchProfilesSelect<T extends boolean = true> {
+  church?: T;
+  description?: T;
+  address?:
     | T
     | {
-        enabledModules?: T;
+        street?: T;
+        postalCode?: T;
+        city?: T;
+      };
+  contact?:
+    | T
+    | {
+        email?: T;
+        phone?: T;
+        website?: T;
+      };
+  services?:
+    | T
+    | {
+        label?: T;
+        day?: T;
+        time?: T;
+        id?: T;
+      };
+  social?:
+    | T
+    | {
+        facebook?: T;
+        instagram?: T;
+        youtube?: T;
       };
   updatedAt?: T;
   createdAt?: T;

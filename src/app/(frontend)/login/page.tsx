@@ -1,36 +1,32 @@
-import { headers as getHeaders } from 'next/headers.js'
 import { notFound, redirect } from 'next/navigation'
-import { getPayload } from 'payload'
+import type { Metadata } from 'next'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { checkUserTenantAccess } from '@/lib/tenant-check'
+import { TenantTheme } from '@/components/tenant-theme'
 import { LoginForm } from '@/components/login-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { tenant } = await resolveTenant()
+  if (!tenant) return {}
+  return {
+    title: `Connexion | ${tenant.name}`,
+    description: `Connectez-vous à l'espace membre de ${tenant.name}.`,
+  }
+}
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ redirect?: string }>
 }) {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
+  const { user, tenant, branding } = await resolveTenant()
   const { redirect: redirectTo } = await searchParams
 
-  // Résolution du tenant — obligatoire
-  const tenantSlug = getTenantSlug(headers)
-  if (!tenantSlug) {
-    notFound()
-  }
-
-  const tenant = await getTenantBySlug(payload, tenantSlug)
-  if (!tenant) {
-    notFound()
-  }
+  if (!tenant) notFound()
 
   // Vérifier si déjà connecté
-  const { user } = await payload.auth({ headers })
   if (user) {
     if (checkUserTenantAccess(user, tenant.id)) {
       redirect(redirectTo || '/dashboard')
@@ -40,6 +36,7 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+      <TenantTheme colors={branding?.colors || {}} />
       <Card className="w-full max-w-md border-0 shadow-none sm:border sm:shadow-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">
@@ -53,6 +50,7 @@ export default async function LoginPage({
           {user && (
             <div className="mb-4 rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
               Vous êtes connecté(e) avec un compte qui n&apos;appartient pas à cette église.
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
               <a href="/api/users/logout" className="underline ml-1 font-medium">
                 Se déconnecter
               </a>

@@ -1,11 +1,8 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { EventForm } from '@/components/features/events/event-form'
 
 export default async function EditEventPage({
@@ -17,15 +14,9 @@ export default async function EditEventPage({
   const eventId = Number(id)
   if (Number.isNaN(eventId)) notFound()
 
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+  const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
-
-  const tenantSlug = getTenantSlug(headers)
-  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
   if (!tenant) notFound()
 
   const event = await payload.findByID({

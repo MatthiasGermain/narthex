@@ -1,32 +1,25 @@
-import { headers as getHeaders } from 'next/headers.js'
 import { notFound, redirect } from 'next/navigation'
-import { getPayload } from 'payload'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { checkUserTenantAccess } from '@/lib/tenant-check'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
+import { TenantTheme } from '@/components/tenant-theme'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
+  const { user, tenantSlug, tenant, branding } = await resolveTenant()
 
   // Vérifier l'authentification
-  const { user } = await payload.auth({ headers })
   if (!user) {
-    const currentPath = headers.get('x-next-url') || '/dashboard'
+    const currentPath = '/dashboard'
     redirect(`/login?redirect=${encodeURIComponent(currentPath)}`)
   }
 
   // Résolution du tenant — obligatoire pour accéder au dashboard
-  const tenantSlug = getTenantSlug(headers)
   if (!tenantSlug) {
     redirect('/login')
   }
 
-  const tenant = await getTenantBySlug(payload, tenantSlug)
   if (!tenant) {
     notFound()
   }
@@ -40,6 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen">
+      <TenantTheme colors={branding?.colors || {}} />
       <Sidebar churchName={churchName} />
 
       <div className="md:pl-60 min-h-screen flex flex-col">

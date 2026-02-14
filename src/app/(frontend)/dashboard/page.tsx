@@ -1,7 +1,7 @@
 import { headers as getHeaders } from 'next/headers.js'
 import { getPayload } from 'payload'
 import Link from 'next/link'
-import { CalendarPlus, Calendar } from 'lucide-react'
+import { CalendarPlus, Calendar, Church } from 'lucide-react'
 
 import config from '@/payload.config'
 import { Card, CardContent } from '@/components/ui/card'
@@ -49,6 +49,22 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
+
+        {user?.role !== 'volunteer' && (
+          <Link href="/dashboard/profile">
+            <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                  <Church className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-heading font-bold">Profil de l&apos;église</p>
+                  <p className="text-sm text-muted-foreground">Modifier les infos publiques</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
       </div>
     </div>
   )

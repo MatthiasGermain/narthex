@@ -1,13 +1,35 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, Clock } from 'lucide-react'
+import type { Metadata } from 'next'
 
-import config from '@/payload.config'
-import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { resolveTenant } from '@/lib/tenant'
 import { formatDate, formatTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
+import { TenantTheme } from '@/components/tenant-theme'
+
+export const revalidate = 60
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const { payload, tenant } = await resolveTenant()
+  if (!tenant) return {}
+  try {
+    const event = await payload.findByID({ collection: 'events', id, overrideAccess: true })
+    const description = `${event.title} — ${formatDate(event.date)} à ${formatTime(event.time)}${event.location ? ` — ${event.location}` : ''}`
+    return {
+      title: `${event.title} | ${tenant.name}`,
+      description,
+      openGraph: { title: `${event.title} | ${tenant.name}`, description },
+    }
+  } catch {
+    return {}
+  }
+}
 
 export default async function EventDetailPage({
   params,
@@ -15,15 +37,8 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+  const { payload, user, tenant, branding } = await resolveTenant()
 
-  const tenantSlug = getTenantSlug(headers)
-  if (!tenantSlug) notFound()
-
-  const tenant = await getTenantBySlug(payload, tenantSlug)
   if (!tenant) notFound()
 
   // Fetch l'événement
@@ -47,10 +62,11 @@ export default async function EventDetailPage({
   // Event interne → 404 si pas connecté
   if (event.visibility === 'internal' && !user) notFound()
 
-  const logoUrl = typeof tenant.logo === 'object' && tenant.logo?.url ? tenant.logo.url : null
+  const logoUrl = typeof branding?.logo === 'object' && branding.logo?.url ? branding.logo.url : null
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TenantTheme colors={branding?.colors || {}} />
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
       <div className="flex-1 px-4 py-8 sm:py-12">

@@ -66,35 +66,6 @@ export const Churches: CollectionConfig = {
       ],
     },
     {
-      name: 'logo',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Logo',
-    },
-    {
-      name: 'colors',
-      type: 'group',
-      label: 'Couleurs',
-      fields: [
-        {
-          name: 'primary',
-          type: 'text',
-          label: 'Couleur primaire',
-          admin: {
-            description: 'Code hexadécimal (ex: #1a73e8)',
-          },
-        },
-        {
-          name: 'secondary',
-          type: 'text',
-          label: 'Couleur secondaire',
-          admin: {
-            description: 'Code hexadécimal (ex: #f5f5f5)',
-          },
-        },
-      ],
-    },
-    {
       name: 'settings',
       type: 'group',
       label: 'Paramètres',
