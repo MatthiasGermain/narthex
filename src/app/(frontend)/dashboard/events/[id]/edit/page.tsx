@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
 import config from '@/payload.config'
+import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
 import { EventForm } from '@/components/features/events/event-form'
 
 export default async function EditEventPage({
@@ -23,6 +24,10 @@ export default async function EditEventPage({
 
   if (!user) return null
 
+  const tenantSlug = getTenantSlug(headers)
+  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
+  if (!tenant) notFound()
+
   const event = await payload.findByID({
     collection: 'events',
     id: eventId,
@@ -31,6 +36,10 @@ export default async function EditEventPage({
   }).catch(() => null)
 
   if (!event) notFound()
+
+  // Vérifier que l'event appartient au tenant courant
+  const eventChurchId = typeof event.church === 'object' ? event.church?.id : event.church
+  if (String(eventChurchId) !== String(tenant.id)) notFound()
 
   // Extraire la date au format YYYY-MM-DD depuis l'ISO string de Payload
   const dateValue = event.date ? new Date(event.date).toISOString().split('T')[0] : ''

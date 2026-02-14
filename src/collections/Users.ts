@@ -1,5 +1,5 @@
 import type { CollectionConfig, FieldAccess } from 'payload'
-import { isSuperAdmin, belongsToChurch, getUserTenantIDs } from '../access'
+import { isSuperAdmin, isSuperAdminCheck, belongsToChurch, getUserTenantIDs } from '../access'
 
 const updateScopedToTenant = ({ req: { user } }: { req: { user: unknown } }) => {
   if (!user) return false
@@ -25,6 +25,7 @@ export const Users: CollectionConfig = {
     lockTime: 600000,
   },
   access: {
+    admin: ({ req }) => isSuperAdminCheck(req.user),
     read: belongsToChurch,
     create: isSuperAdmin,
     update: updateScopedToTenant,

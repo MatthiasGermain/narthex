@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { CalendarPlus, CalendarX } from 'lucide-react'
 
 import config from '@/payload.config'
+import { getTenantSlug, getTenantBySlug } from '@/lib/tenant'
+import { formatDateShort, formatTime } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -15,15 +17,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { EventActions } from '@/components/features/events/event-actions'
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
 
 function isPast(dateStr: string): boolean {
   const today = new Date()
@@ -49,8 +42,15 @@ export default async function EventsPage() {
 
   if (!user) return null
 
+  const tenantSlug = getTenantSlug(headers)
+  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
+  if (!tenant) return null
+
   const { docs: events } = await payload.find({
     collection: 'events',
+    where: {
+      church: { equals: tenant.id },
+    },
     sort: 'date',
     limit: 100,
     overrideAccess: false,
@@ -99,7 +99,7 @@ export default async function EventsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{event.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {formatDate(event.date)} à {event.time}
+                        {formatDateShort(event.date)} à {formatTime(event.time)}
                       </p>
                       {event.location && (
                         <p className="text-sm text-muted-foreground">{event.location}</p>
@@ -132,7 +132,7 @@ export default async function EventsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{event.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {formatDate(event.date)} à {event.time}
+                        {formatDateShort(event.date)} à {formatTime(event.time)}
                       </p>
                       {event.location && (
                         <p className="text-sm text-muted-foreground">{event.location}</p>
@@ -170,8 +170,8 @@ export default async function EventsPage() {
                       {upcoming.map((event) => (
                         <TableRow key={event.id} className="hover:bg-muted/30">
                           <TableCell className="font-medium">{event.title}</TableCell>
-                          <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(event.date)}</TableCell>
-                          <TableCell className="text-muted-foreground">{event.time}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateShort(event.date)}</TableCell>
+                          <TableCell className="text-muted-foreground">{formatTime(event.time)}</TableCell>
                           <TableCell className="text-muted-foreground">{event.location || '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={event.visibility === 'public' ? 'border-primary/40 text-primary' : 'border-muted-foreground/40 text-muted-foreground'}>
@@ -212,8 +212,8 @@ export default async function EventsPage() {
                       {past.map((event) => (
                         <TableRow key={event.id} className="hover:bg-muted/30">
                           <TableCell className="font-medium">{event.title}</TableCell>
-                          <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(event.date)}</TableCell>
-                          <TableCell className="text-muted-foreground">{event.time}</TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateShort(event.date)}</TableCell>
+                          <TableCell className="text-muted-foreground">{formatTime(event.time)}</TableCell>
                           <TableCell className="text-muted-foreground">{event.location || '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="border-muted-foreground/40 text-muted-foreground">
