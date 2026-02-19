@@ -19,7 +19,7 @@ ARG PAYLOAD_SECRET
 ENV DATABASE_URL=$DATABASE_URL
 ENV PAYLOAD_SECRET=$PAYLOAD_SECRET
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--no-deprecation --max-old-space-size=4096"
+ENV NODE_OPTIONS="--no-deprecation --max-old-space-size=1536"
 
 RUN pnpm build
 
