@@ -53,13 +53,13 @@ async function resolveCustomDomain(req: NextRequest): Promise<string | null> {
     const internalOrigin = process.env.NODE_ENV === 'production'
       ? 'http://localhost:3000'
       : req.nextUrl.origin
-    const apiUrl = `${internalOrigin}/api/churches?where[domains.domain][equals]=${encodeURIComponent(cleanHost)}&limit=1&depth=0`
-    const res = await fetch(apiUrl, { headers: { 'x-internal': '1' } })
+    const apiUrl = `${internalOrigin}/api/resolve-tenant?domain=${encodeURIComponent(cleanHost)}`
+    const res = await fetch(apiUrl)
 
     if (!res.ok) return null
 
     const data = await res.json()
-    return data.docs?.[0]?.slug || null
+    return data.slug || null
   } catch {
     return null
   }
