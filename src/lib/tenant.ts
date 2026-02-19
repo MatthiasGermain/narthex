@@ -6,6 +6,7 @@ import type { Payload } from 'payload'
 import config from '@/payload.config'
 
 const TENANT_HEADER = 'x-tenant-slug'
+const CUSTOM_DOMAIN_HEADER = 'x-custom-domain'
 
 /**
  * Lit le slug du tenant depuis les headers de la requête.
@@ -40,7 +41,21 @@ export const resolveTenant = cache(async () => {
   const { user } = await payload.auth({ headers })
 
   const tenantSlug = getTenantSlug(headers)
-  const tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
+  let tenant = tenantSlug ? await getTenantBySlug(payload, tenantSlug) : null
+
+  // Résolution domaine custom (ex: church-test.dev)
+  if (!tenant) {
+    const customDomain = headers.get(CUSTOM_DOMAIN_HEADER)
+    if (customDomain) {
+      const result = await payload.find({
+        collection: 'churches',
+        where: { 'domains.domain': { equals: customDomain } },
+        limit: 1,
+        overrideAccess: true,
+      })
+      tenant = result.docs[0] || null
+    }
+  }
 
   // Fetch branding et profile (1:1 par tenant)
   const branding = tenant

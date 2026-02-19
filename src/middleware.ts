@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const TENANT_HEADER = 'x-tenant-slug'
+const CUSTOM_DOMAIN_HEADER = 'x-custom-domain'
 
 /** Domaine principal — pas de tenant */
 const PLATFORM_DOMAINS = ['narthex.dev', 'www.narthex.dev']
@@ -35,55 +36,37 @@ function extractTenantSlug(req: NextRequest): string | null {
   return null
 }
 
-/**
- * Résout un domaine custom (ex: church-test.dev) vers le slug du tenant
- * en interrogeant l'API Payload interne.
- */
-async function resolveCustomDomain(req: NextRequest): Promise<string | null> {
+/** Détecte si c'est un domaine custom (2-parts, pas le domaine principal) */
+function extractCustomDomain(req: NextRequest): string | null {
   const hostname = req.headers.get('host') || ''
   const cleanHost = hostname.replace(/:\d+$/, '')
-
-  // Seulement pour les domaines 2-parts qui ne sont pas le domaine principal
   const parts = cleanHost.split('.')
-  if (parts.length !== 2 || PLATFORM_DOMAINS.includes(cleanHost)) {
-    return null
+
+  if (parts.length === 2 && !PLATFORM_DOMAINS.includes(cleanHost)) {
+    return cleanHost
   }
 
-  try {
-    const internalOrigin = process.env.NODE_ENV === 'production'
-      ? 'http://localhost:3000'
-      : req.nextUrl.origin
-    const apiUrl = `${internalOrigin}/api/resolve-tenant?domain=${encodeURIComponent(cleanHost)}`
-    const res = await fetch(apiUrl)
-
-    if (!res.ok) return null
-
-    const data = await res.json()
-    return data.slug || null
-  } catch {
-    return null
-  }
+  return null
 }
 
-export async function middleware(req: NextRequest) {
-  // 1. Résolution rapide (sous-domaines, localhost, query param)
-  let slug = extractTenantSlug(req)
+export function middleware(req: NextRequest) {
+  const slug = extractTenantSlug(req)
 
-  // 2. Si pas trouvé, essayer la résolution par domaine custom
-  if (!slug) {
-    slug = await resolveCustomDomain(req)
+  if (slug) {
+    const requestHeaders = new Headers(req.headers)
+    requestHeaders.set(TENANT_HEADER, slug)
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  if (!slug) {
-    return NextResponse.next()
+  // Domaine custom → passer le domaine au serveur pour résolution
+  const customDomain = extractCustomDomain(req)
+  if (customDomain) {
+    const requestHeaders = new Headers(req.headers)
+    requestHeaders.set(CUSTOM_DOMAIN_HEADER, customDomain)
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  const requestHeaders = new Headers(req.headers)
-  requestHeaders.set(TENANT_HEADER, slug)
-
-  return NextResponse.next({
-    request: { headers: requestHeaders },
-  })
+  return NextResponse.next()
 }
 
 export const config = {
