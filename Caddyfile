@@ -1,0 +1,9 @@
+# Domaine principal Narthex (pas de tenant)
+narthex.dev {
+	reverse_proxy app:3000
+}
+
+# Domaine custom église test
+church-test.dev {
+	reverse_proxy app:3000
+}

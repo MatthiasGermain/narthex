@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const TENANT_HEADER = 'x-tenant-slug'
 
+/** Domaine principal — pas de tenant */
+const PLATFORM_DOMAINS = ['narthex.dev', 'www.narthex.dev']
+
 function extractTenantSlug(req: NextRequest): string | null {
   const hostname = req.headers.get('host') || ''
+  const cleanHost = hostname.replace(/:\d+$/, '')
+
+  // Ignorer le domaine principal (pas de tenant)
+  if (PLATFORM_DOMAINS.includes(cleanHost)) {
+    return null
+  }
 
   // Dev: sous-domaine de *.localhost (ex: eglise-demo.localhost:3000)
   const localhostMatch = hostname.match(/^([^.]+)\.localhost(:\d+)?$/)
@@ -11,9 +20,8 @@ function extractTenantSlug(req: NextRequest): string | null {
     return localhostMatch[1]
   }
 
-  // Prod: sous-domaine de *.narthex.fr ou autre domaine principal
-  // (ex: eglise-demo.narthex.fr → "eglise-demo")
-  const parts = hostname.replace(/:\d+$/, '').split('.')
+  // Prod: sous-domaine de *.narthex.dev (ex: eap.narthex.dev → "eap")
+  const parts = cleanHost.split('.')
   if (parts.length >= 3 && parts[0] !== 'www') {
     return parts[0]
   }
@@ -27,14 +35,46 @@ function extractTenantSlug(req: NextRequest): string | null {
   return null
 }
 
-export function middleware(req: NextRequest) {
-  const slug = extractTenantSlug(req)
+/**
+ * Résout un domaine custom (ex: church-test.dev) vers le slug du tenant
+ * en interrogeant l'API Payload interne.
+ */
+async function resolveCustomDomain(req: NextRequest): Promise<string | null> {
+  const hostname = req.headers.get('host') || ''
+  const cleanHost = hostname.replace(/:\d+$/, '')
+
+  // Seulement pour les domaines 2-parts qui ne sont pas le domaine principal
+  const parts = cleanHost.split('.')
+  if (parts.length !== 2 || PLATFORM_DOMAINS.includes(cleanHost)) {
+    return null
+  }
+
+  try {
+    const apiUrl = `${req.nextUrl.origin}/api/churches?where[domains.domain][equals]=${encodeURIComponent(cleanHost)}&limit=1&depth=0`
+    const res = await fetch(apiUrl, { headers: { 'x-internal': '1' } })
+
+    if (!res.ok) return null
+
+    const data = await res.json()
+    return data.docs?.[0]?.slug || null
+  } catch {
+    return null
+  }
+}
+
+export async function middleware(req: NextRequest) {
+  // 1. Résolution rapide (sous-domaines, localhost, query param)
+  let slug = extractTenantSlug(req)
+
+  // 2. Si pas trouvé, essayer la résolution par domaine custom
+  if (!slug) {
+    slug = await resolveCustomDomain(req)
+  }
 
   if (!slug) {
     return NextResponse.next()
   }
 
-  // Injecter le slug du tenant dans les headers de la requête
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set(TENANT_HEADER, slug)
 
