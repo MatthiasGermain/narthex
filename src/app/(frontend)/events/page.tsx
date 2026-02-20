@@ -38,6 +38,7 @@ export default async function PublicEventsPage() {
     },
     sort: 'date',
     limit: 100,
+    depth: 1,
     overrideAccess: true,
   })
 

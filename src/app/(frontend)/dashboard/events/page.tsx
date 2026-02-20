@@ -51,6 +51,7 @@ export default async function EventsPage() {
     },
     sort: 'date',
     limit: 100,
+    depth: 1,
     overrideAccess: false,
     user,
   })

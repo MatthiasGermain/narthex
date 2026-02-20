@@ -67,6 +67,7 @@ export default async function HomePage() {
     },
     sort: 'date',
     limit: 3,
+    depth: 1,
     overrideAccess: true,
   })
 

@@ -170,3 +170,21 @@
     font-weight: 700;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Page transitions
+   ═══════════════════════════════════════════════════════ */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 250ms ease-out;
+}

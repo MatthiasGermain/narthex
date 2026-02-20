@@ -25,6 +25,7 @@ export async function getTenantBySlug(payload: Payload, slug: string) {
     collection: 'churches',
     where: { slug: { equals: slug } },
     limit: 1,
+    depth: 0,
     overrideAccess: true,
   })
   return result.docs[0] || null
@@ -51,34 +52,36 @@ export const resolveTenant = cache(async () => {
         collection: 'churches',
         where: { 'domains.domain': { equals: customDomain } },
         limit: 1,
+        depth: 0,
         overrideAccess: true,
       })
       tenant = result.docs[0] || null
     }
   }
 
-  // Fetch branding et profile (1:1 par tenant)
-  const branding = tenant
-    ? await payload
-        .find({
-          collection: 'church-branding',
-          where: { church: { equals: tenant.id } },
-          limit: 1,
-          overrideAccess: true,
-        })
-        .then((r) => r.docs[0] || null)
-    : null
-
-  const profile = tenant
-    ? await payload
-        .find({
-          collection: 'church-profiles',
-          where: { church: { equals: tenant.id } },
-          limit: 1,
-          overrideAccess: true,
-        })
-        .then((r) => r.docs[0] || null)
-    : null
+  // Fetch branding et profile en parallèle (1:1 par tenant)
+  const [branding, profile] = tenant
+    ? await Promise.all([
+        payload
+          .find({
+            collection: 'church-branding',
+            where: { church: { equals: tenant.id } },
+            limit: 1,
+            depth: 1,
+            overrideAccess: true,
+          })
+          .then((r) => r.docs[0] || null),
+        payload
+          .find({
+            collection: 'church-profiles',
+            where: { church: { equals: tenant.id } },
+            limit: 1,
+            depth: 0,
+            overrideAccess: true,
+          })
+          .then((r) => r.docs[0] || null),
+      ])
+    : [null, null]
 
   return { headers, payload, user, tenantSlug, tenant, branding, profile }
 })

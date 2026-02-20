@@ -1,0 +1,25 @@
+services:
+  app:
+    image: ghcr.io/matthiasgermain/narthex:latest
+    restart: unless-stopped
+    env_file: .env.production
+    volumes:
+      - media_data:/app/media
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  media_data:
+  caddy_data:
+  caddy_config:

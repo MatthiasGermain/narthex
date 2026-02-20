@@ -1,8 +1,10 @@
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, MapPin, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
+import type { Payload } from 'payload'
 
 import { resolveTenant } from '@/lib/tenant'
 import { formatDate, formatTime } from '@/lib/format'
@@ -10,6 +12,19 @@ import { PublicHeader } from '@/components/layout/public-header'
 import { TenantTheme } from '@/components/tenant-theme'
 
 export const revalidate = 60
+
+const getEvent = cache(async (payload: Payload, id: number | string) => {
+  try {
+    return await payload.findByID({
+      collection: 'events',
+      id,
+      depth: 1,
+      overrideAccess: true,
+    })
+  } catch {
+    return null
+  }
+})
 
 export async function generateMetadata({
   params,
@@ -19,25 +34,22 @@ export async function generateMetadata({
   const { id } = await params
   const { payload, tenant } = await resolveTenant()
   if (!tenant) return {}
-  try {
-    const event = await payload.findByID({ collection: 'events', id, overrideAccess: true })
-    const description = `${event.title} — ${formatDate(event.date)} à ${formatTime(event.time)}${event.location ? ` — ${event.location}` : ''}`
-    const ogImage = typeof event.image === 'object' && event.image?.sizes?.card?.url
-      ? event.image.sizes.card.url
-      : typeof event.image === 'object' && event.image?.url
-        ? event.image.url
-        : undefined
-    return {
+  const event = await getEvent(payload, id)
+  if (!event) return {}
+  const description = `${event.title} — ${formatDate(event.date)} à ${formatTime(event.time)}${event.location ? ` — ${event.location}` : ''}`
+  const ogImage = typeof event.image === 'object' && event.image?.sizes?.card?.url
+    ? event.image.sizes.card.url
+    : typeof event.image === 'object' && event.image?.url
+      ? event.image.url
+      : undefined
+  return {
+    title: `${event.title} | ${tenant.name}`,
+    description,
+    openGraph: {
       title: `${event.title} | ${tenant.name}`,
       description,
-      openGraph: {
-        title: `${event.title} | ${tenant.name}`,
-        description,
-        ...(ogImage ? { images: [{ url: ogImage }] } : {}),
-      },
-    }
-  } catch {
-    return {}
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+    },
   }
 }
 
@@ -51,18 +63,7 @@ export default async function EventDetailPage({
 
   if (!tenant) notFound()
 
-  // Fetch l'événement
-  let event
-  try {
-    event = await payload.findByID({
-      collection: 'events',
-      id,
-      overrideAccess: true,
-    })
-  } catch {
-    notFound()
-  }
-
+  const event = await getEvent(payload, id)
   if (!event) notFound()
 
   // Vérifier que l'event appartient à ce tenant

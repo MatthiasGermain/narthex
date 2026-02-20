@@ -22,6 +22,7 @@ export default async function EditEventPage({
   const event = await payload.findByID({
     collection: 'events',
     id: eventId,
+    depth: 1,
     overrideAccess: false,
     user,
   }).catch(() => null)
