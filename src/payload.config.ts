@@ -1,3 +1,4 @@
+import { resendAdapter } from '@payloadcms/email-resend'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -50,6 +51,11 @@ export default buildConfig({
     },
   }),
   sharp,
+  email: resendAdapter({
+    defaultFromAddress: 'noreply@narthex.dev',
+    defaultFromName: 'Narthex',
+    apiKey: process.env.RESEND_API_KEY || '',
+  }),
   plugins: [
     multiTenantPlugin({
       tenantsSlug: 'churches',

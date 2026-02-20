@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const TENANT_HEADER = 'x-tenant-slug'
 const CUSTOM_DOMAIN_HEADER = 'x-custom-domain'
 
 /** Domaine principal — pas de tenant */
 const PLATFORM_DOMAINS = ['narthex.dev', 'www.narthex.dev']
+
+/** Endpoints auth avec leurs limites */
+const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  '/api/users/login': { limit: 5, windowMs: 15 * 60 * 1000 },
+  '/api/users/forgot-password': { limit: 3, windowMs: 15 * 60 * 1000 },
+  '/api/users/reset-password': { limit: 5, windowMs: 15 * 60 * 1000 },
+}
 
 function extractTenantSlug(req: NextRequest): string | null {
   const hostname = req.headers.get('host') || ''
@@ -49,7 +57,33 @@ function extractCustomDomain(req: NextRequest): string | null {
   return null
 }
 
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || 'unknown'
+}
+
 export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  // --- Rate limiting sur les endpoints auth ---
+  for (const [path, config] of Object.entries(RATE_LIMITS)) {
+    if (pathname === path && req.method === 'POST') {
+      const ip = getClientIp(req)
+      const key = `${ip}:${path}`
+      if (!checkRateLimit(key, config.limit, config.windowMs)) {
+        return NextResponse.json(
+          { errors: [{ message: 'Trop de tentatives. Réessayez dans 15 minutes.' }] },
+          { status: 429 },
+        )
+      }
+    }
+  }
+
+  // --- Laisser passer les autres routes /api/ sans tenant resolution ---
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
+  // --- Tenant resolution pour les pages frontend ---
   const slug = extractTenantSlug(req)
 
   if (slug) {
@@ -71,7 +105,7 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Exclure: /_next, /admin, /api, fichiers statiques
-    '/((?!_next|admin|api|favicon.ico|[^/]+\\.[^/]+$).*)',
+    // Exclure: /_next, /admin, fichiers statiques
+    '/((?!_next|admin|favicon.ico|[^/]+\\.[^/]+$).*)',
   ],
 }
