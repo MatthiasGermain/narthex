@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/header'
 import { TenantTheme } from '@/components/tenant-theme'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, tenantSlug, tenant, branding } = await resolveTenant()
+  const { user, tenant, branding } = await resolveTenant()
 
   // Résolution du tenant — obligatoire pour accéder au dashboard
   if (!tenant) {
