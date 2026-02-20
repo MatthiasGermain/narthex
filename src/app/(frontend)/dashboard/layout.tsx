@@ -9,19 +9,15 @@ import { TenantTheme } from '@/components/tenant-theme'
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, tenantSlug, tenant, branding } = await resolveTenant()
 
+  // Résolution du tenant — obligatoire pour accéder au dashboard
+  if (!tenant) {
+    notFound()
+  }
+
   // Vérifier l'authentification
   if (!user) {
     const currentPath = '/dashboard'
     redirect(`/login?redirect=${encodeURIComponent(currentPath)}`)
-  }
-
-  // Résolution du tenant — obligatoire pour accéder au dashboard
-  if (!tenantSlug) {
-    redirect('/login')
-  }
-
-  if (!tenant) {
-    notFound()
   }
 
   // Vérifier que l'user appartient à ce tenant (isolation cross-tenant)

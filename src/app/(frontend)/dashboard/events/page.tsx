@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { CalendarPlus, CalendarX } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
@@ -19,6 +20,12 @@ function isPast(dateStr: string): boolean {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return new Date(dateStr) < today
+}
+
+function getThumbUrl(image: unknown): string | null {
+  if (!image || typeof image !== 'object') return null
+  const img = image as { url?: string; sizes?: { thumbnail?: { url?: string } } }
+  return img.sizes?.thumbnail?.url || img.url || null
 }
 
 function canUserDelete(
@@ -87,6 +94,15 @@ export default async function EventsPage() {
                     key={event.id}
                     className="flex items-start justify-between gap-3 rounded-lg border p-4"
                   >
+                    {getThumbUrl(event.image) && (
+                      <Image
+                        src={getThumbUrl(event.image)!}
+                        alt={event.title}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded object-cover shrink-0"
+                      />
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{event.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -149,10 +165,11 @@ export default async function EventsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="w-[30%]">Titre</TableHead>
-                        <TableHead className="w-[25%]">Date</TableHead>
+                        <TableHead className="w-10"></TableHead>
+                        <TableHead className="w-[28%]">Titre</TableHead>
+                        <TableHead className="w-[23%]">Date</TableHead>
                         <TableHead className="w-[8%]">Heure</TableHead>
-                        <TableHead className="w-[20%]">Lieu</TableHead>
+                        <TableHead className="w-[18%]">Lieu</TableHead>
                         <TableHead className="w-[12%]">Visibilité</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
@@ -160,6 +177,19 @@ export default async function EventsPage() {
                     <TableBody>
                       {upcoming.map((event) => (
                         <TableRow key={event.id} className="hover:bg-muted/30">
+                          <TableCell>
+                            {getThumbUrl(event.image) ? (
+                              <Image
+                                src={getThumbUrl(event.image)!}
+                                alt={event.title}
+                                width={36}
+                                height={36}
+                                className="h-9 w-9 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="h-9 w-9 rounded bg-muted" />
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">{event.title}</TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateShort(event.date)}</TableCell>
                           <TableCell className="text-muted-foreground">{formatTime(event.time)}</TableCell>
@@ -191,10 +221,11 @@ export default async function EventsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="w-[30%]">Titre</TableHead>
-                        <TableHead className="w-[25%]">Date</TableHead>
+                        <TableHead className="w-10"></TableHead>
+                        <TableHead className="w-[28%]">Titre</TableHead>
+                        <TableHead className="w-[23%]">Date</TableHead>
                         <TableHead className="w-[8%]">Heure</TableHead>
-                        <TableHead className="w-[20%]">Lieu</TableHead>
+                        <TableHead className="w-[18%]">Lieu</TableHead>
                         <TableHead className="w-[12%]">Visibilité</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
@@ -202,6 +233,19 @@ export default async function EventsPage() {
                     <TableBody>
                       {past.map((event) => (
                         <TableRow key={event.id} className="hover:bg-muted/30">
+                          <TableCell>
+                            {getThumbUrl(event.image) ? (
+                              <Image
+                                src={getThumbUrl(event.image)!}
+                                alt={event.title}
+                                width={36}
+                                height={36}
+                                className="h-9 w-9 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="h-9 w-9 rounded bg-muted" />
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">{event.title}</TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateShort(event.date)}</TableCell>
                           <TableCell className="text-muted-foreground">{formatTime(event.time)}</TableCell>

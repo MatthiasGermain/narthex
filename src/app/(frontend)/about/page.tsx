@@ -4,6 +4,7 @@ import { Clock, MapPin, Mail, Phone, Globe, Facebook, Instagram, Youtube } from 
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
+import { DAY_LABELS, formatServiceTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
 import { TenantTheme } from '@/components/tenant-theme'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,20 +12,6 @@ import { Button } from '@/components/ui/button'
 
 export const revalidate = 60
 
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Lundi',
-  tuesday: 'Mardi',
-  wednesday: 'Mercredi',
-  thursday: 'Jeudi',
-  friday: 'Vendredi',
-  saturday: 'Samedi',
-  sunday: 'Dimanche',
-}
-
-function formatServiceTime(time: string): string {
-  const [h, m] = time.split(':')
-  return m === '00' ? `${parseInt(h)}h` : `${parseInt(h)}h${m}`
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   const { tenant, profile } = await resolveTenant()

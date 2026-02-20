@@ -326,6 +326,10 @@ export interface Event {
   time: string;
   location?: string | null;
   description?: string | null;
+  /**
+   * Image optionnelle pour illustrer l'événement
+   */
+  image?: (number | null) | Media;
   visibility: 'public' | 'internal';
   /**
    * Auto-assigné au créateur
@@ -590,6 +594,7 @@ export interface EventsSelect<T extends boolean = true> {
   time?: T;
   location?: T;
   description?: T;
+  image?: T;
   visibility?: T;
   createdBy?: T;
   church?: T;

@@ -50,6 +50,7 @@ export default async function EditEventPage({
 
       <EventForm
         mode="edit"
+        churchId={tenant.id}
         defaultValues={{
           id: event.id,
           title: event.title,
@@ -58,6 +59,7 @@ export default async function EditEventPage({
           location: event.location ?? '',
           description: event.description ?? '',
           visibility: event.visibility as 'public' | 'internal',
+          image: event.image as number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null,
         }}
       />
     </div>

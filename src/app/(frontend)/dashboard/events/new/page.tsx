@@ -1,18 +1,14 @@
-import { headers as getHeaders } from 'next/headers.js'
-import { getPayload } from 'payload'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
-import config from '@/payload.config'
+import { resolveTenant } from '@/lib/tenant'
 import { EventForm } from '@/components/features/events/event-form'
 
 export default async function NewEventPage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+  const { user, tenant } = await resolveTenant()
 
   if (!user) return null
+  if (!tenant) return null
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,7 +23,7 @@ export default async function NewEventPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">Nouvel événement</h1>
       </div>
 
-      <EventForm mode="create" />
+      <EventForm mode="create" churchId={tenant.id} />
     </div>
   )
 }

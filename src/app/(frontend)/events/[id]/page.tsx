@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, MapPin, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -21,10 +22,19 @@ export async function generateMetadata({
   try {
     const event = await payload.findByID({ collection: 'events', id, overrideAccess: true })
     const description = `${event.title} — ${formatDate(event.date)} à ${formatTime(event.time)}${event.location ? ` — ${event.location}` : ''}`
+    const ogImage = typeof event.image === 'object' && event.image?.sizes?.card?.url
+      ? event.image.sizes.card.url
+      : typeof event.image === 'object' && event.image?.url
+        ? event.image.url
+        : undefined
     return {
       title: `${event.title} | ${tenant.name}`,
       description,
-      openGraph: { title: `${event.title} | ${tenant.name}`, description },
+      openGraph: {
+        title: `${event.title} | ${tenant.name}`,
+        description,
+        ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+      },
     }
   } catch {
     return {}
@@ -93,6 +103,18 @@ export default async function EventDetailPage({
               </p>
             )}
           </div>
+
+          {event.image && typeof event.image === 'object' && event.image.url && (
+            <div className="mt-6 rounded-lg overflow-hidden">
+              <Image
+                src={event.image.sizes?.card?.url || event.image.url}
+                alt={event.image.alt || event.title}
+                width={768}
+                height={512}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          )}
 
           {event.description && (
             <div className="mt-8 prose prose-sm max-w-none whitespace-pre-wrap">

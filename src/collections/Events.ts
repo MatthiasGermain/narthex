@@ -102,6 +102,15 @@ export const Events: CollectionConfig = {
       label: 'Description',
     },
     {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Image / Affiche',
+      admin: {
+        description: 'Image optionnelle pour illustrer l\'événement',
+      },
+    },
+    {
       name: 'visibility',
       type: 'select',
       required: true,

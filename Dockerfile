@@ -21,7 +21,7 @@ ENV PAYLOAD_SECRET=$PAYLOAD_SECRET
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--no-deprecation --max-old-space-size=1536"
 
-RUN pnpm build
+RUN pnpm exec next build
 
 # ---- Stage 3: Runner ----
 FROM node:20-alpine AS runner

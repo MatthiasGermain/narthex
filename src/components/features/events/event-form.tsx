@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { toast } from 'sonner'
+import { Upload, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,17 +25,29 @@ interface EventData {
   location?: string
   description?: string
   visibility?: 'public' | 'internal'
+  image?: number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null
 }
 
 interface EventFormProps {
   mode: 'create' | 'edit'
   defaultValues?: EventData
+  churchId: number
 }
 
-export function EventForm({ mode, defaultValues }: EventFormProps) {
+function getInitialImage(image: EventData['image']): { id: number | null; preview: string | null } {
+  if (!image) return { id: null, preview: null }
+  if (typeof image === 'number') return { id: image, preview: null }
+  return {
+    id: image.id,
+    preview: image.sizes?.thumbnail?.url || image.url || null,
+  }
+}
+
+export function EventForm({ mode, defaultValues, churchId }: EventFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [title, setTitle] = useState(defaultValues?.title ?? '')
   const [date, setDate] = useState(defaultValues?.date ?? '')
@@ -41,6 +55,11 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
   const [location, setLocation] = useState(defaultValues?.location ?? '')
   const [description, setDescription] = useState(defaultValues?.description ?? '')
   const [visibility, setVisibility] = useState<string>(defaultValues?.visibility ?? 'public')
+
+  const initialImage = getInitialImage(defaultValues?.image)
+  const [imageId, setImageId] = useState<number | null>(initialImage.id)
+  const [imagePreview, setImagePreview] = useState<string | null>(initialImage.preview)
+  const [uploading, setUploading] = useState(false)
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
@@ -50,6 +69,42 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
     else if (!/^\d{2}:\d{2}$/.test(time)) newErrors.time = 'Format attendu : HH:mm'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('_payload', JSON.stringify({
+        alt: title.trim() || file.name,
+        church: churchId,
+      }))
+
+      const res = await fetch('/api/media', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        toast.error("Erreur lors de l'upload de l'image")
+        return
+      }
+
+      const data = await res.json()
+      setImageId(data.doc.id)
+      setImagePreview(data.doc.sizes?.thumbnail?.url || data.doc.url)
+    } catch {
+      toast.error("Erreur lors de l'upload de l'image")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function removeImage() {
+    setImageId(null)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,6 +128,8 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
           location: location.trim() || undefined,
           description: description.trim() || undefined,
           visibility,
+          image: imageId || '',
+          church: churchId,
         }),
       })
 
@@ -96,7 +153,8 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-lg">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
+      {/* Ligne 1 : Titre (pleine largeur) */}
       <div className="flex flex-col gap-2">
         <Label htmlFor="title">Titre *</Label>
         <Input
@@ -109,7 +167,8 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
         {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Ligne 2 : Date / Heure / Lieu sur desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="date">Date *</Label>
           <Input
@@ -133,30 +192,84 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
           />
           {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
         </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="location">Lieu</Label>
+          <Input
+            id="location"
+            placeholder="Temple de Belleville"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="location">Lieu</Label>
-        <Input
-          id="location"
-          placeholder="Temple de Belleville"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
+      {/* Ligne 3 : Description + Image cote a cote sur desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            placeholder="Détails de l'événement..."
+            rows={6}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="h-full min-h-40"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Image / Affiche</Label>
+          {imagePreview ? (
+            <div className="relative">
+              <Image
+                src={imagePreview}
+                alt="Preview"
+                width={400}
+                height={300}
+                className="rounded-lg border object-cover w-full h-auto"
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-1 shadow-md hover:bg-destructive/90"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-primary/50 transition-colors h-full min-h-40"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+                  <p className="text-sm text-muted-foreground">Upload en cours...</p>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground text-center">Cliquer pour ajouter une image</p>
+                </>
+              )}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleImageUpload(file)
+            }}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Détails de l'événement..."
-          rows={4}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
+      {/* Ligne 4 : Visibilite */}
+      <div className="flex flex-col gap-2 max-w-xs">
         <Label htmlFor="visibility">Visibilité</Label>
         <Select value={visibility} onValueChange={setVisibility}>
           <SelectTrigger id="visibility">
@@ -169,8 +282,9 @@ export function EventForm({ mode, defaultValues }: EventFormProps) {
         </Select>
       </div>
 
+      {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || uploading}>
           {loading
             ? (mode === 'create' ? 'Ajout...' : 'Enregistrement...')
             : (mode === 'create' ? 'Ajouter' : 'Enregistrer')

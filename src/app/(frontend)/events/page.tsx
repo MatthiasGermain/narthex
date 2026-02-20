@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { CalendarX } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -58,23 +59,39 @@ export default async function PublicEventsPage() {
           {/* Upcoming */}
           {upcoming.length > 0 ? (
             <div className="grid gap-4">
-              {upcoming.map((event) => (
-                <Link key={event.id} href={`/events/${event.id}`}>
-                  <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer">
-                    <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <p className="font-heading font-bold">{event.title}</p>
-                        {event.location && (
-                          <p className="text-sm text-muted-foreground">{event.location}</p>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatDate(event.date)} à {formatTime(event.time)}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+              {upcoming.map((event) => {
+                const thumb = typeof event.image === 'object' && event.image?.sizes?.thumbnail?.url
+                  ? event.image.sizes.thumbnail.url
+                  : typeof event.image === 'object' && event.image?.url
+                    ? event.image.url
+                    : null
+                return (
+                  <Link key={event.id} href={`/events/${event.id}`}>
+                    <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer overflow-hidden">
+                      {thumb && (
+                        <Image
+                          src={thumb}
+                          alt={typeof event.image === 'object' && event.image?.alt ? event.image.alt : event.title}
+                          width={400}
+                          height={300}
+                          className="w-full h-40 object-cover"
+                        />
+                      )}
+                      <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <p className="font-heading font-bold">{event.title}</p>
+                          {event.location && (
+                            <p className="text-sm text-muted-foreground">{event.location}</p>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatDate(event.date)} à {formatTime(event.time)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
