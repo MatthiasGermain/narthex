@@ -58,7 +58,7 @@ function extractCustomDomain(req: NextRequest): string | null {
 }
 
 function getClientIp(req: NextRequest): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || 'unknown'
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 }
 
 export function middleware(req: NextRequest) {
