@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { TenantTheme } from '@/components/tenant-theme'
 import { PageTransition } from '@/components/layout/page-transition'
+import { NavigationProgress } from '@/components/layout/navigation-progress'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, tenant, branding } = await resolveTenant()
@@ -30,6 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen">
+      <NavigationProgress />
       <TenantTheme colors={branding?.colors || {}} />
       <Sidebar churchName={churchName} />
 

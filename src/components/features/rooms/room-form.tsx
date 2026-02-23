@@ -9,39 +9,36 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 
-interface RoomOption {
-  id: number
-  name: string
-}
+const EQUIPMENT_OPTIONS = [
+  { label: 'Vidéoprojecteur', value: 'projector' },
+  { label: 'Sono / Enceintes', value: 'sound' },
+  { label: 'Piano', value: 'piano' },
+  { label: 'Wi-Fi', value: 'wifi' },
+  { label: 'Cuisine', value: 'kitchen' },
+  { label: 'Tableau / Écran', value: 'board' },
+] as const
 
-interface EventData {
+interface RoomData {
   id?: number
-  title?: string
-  date?: string
-  time?: string
-  location?: string
+  name?: string
+  capacity?: number | null
+  floor?: string
   description?: string
-  visibility?: 'public' | 'internal'
-  room?: number | null
-  image?: number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null
+  equipment?: string[]
+  accessibility?: boolean
+  isActive?: boolean
+  image?: number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } } } | null
 }
 
-interface EventFormProps {
+interface RoomFormProps {
   mode: 'create' | 'edit'
-  defaultValues?: EventData
+  defaultValues?: RoomData
   churchId: number
-  rooms?: RoomOption[]
 }
 
-function getInitialImage(image: EventData['image']): { id: number | null; preview: string | null } {
+function getInitialImage(image: RoomData['image']): { id: number | null; preview: string | null } {
   if (!image) return { id: null, preview: null }
   if (typeof image === 'number') return { id: image, preview: null }
   return {
@@ -50,19 +47,19 @@ function getInitialImage(image: EventData['image']): { id: number | null; previe
   }
 }
 
-export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFormProps) {
+export function RoomForm({ mode, defaultValues, churchId }: RoomFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [title, setTitle] = useState(defaultValues?.title ?? '')
-  const [date, setDate] = useState(defaultValues?.date ?? '')
-  const [time, setTime] = useState(defaultValues?.time ?? '')
-  const [location, setLocation] = useState(defaultValues?.location ?? '')
-  const [roomId, setRoomId] = useState<string>(defaultValues?.room?.toString() ?? '')
+  const [name, setName] = useState(defaultValues?.name ?? '')
+  const [capacity, setCapacity] = useState(defaultValues?.capacity?.toString() ?? '')
+  const [floor, setFloor] = useState(defaultValues?.floor ?? '')
   const [description, setDescription] = useState(defaultValues?.description ?? '')
-  const [visibility, setVisibility] = useState<string>(defaultValues?.visibility ?? 'public')
+  const [equipment, setEquipment] = useState<string[]>(defaultValues?.equipment ?? [])
+  const [accessibility, setAccessibility] = useState(defaultValues?.accessibility ?? false)
+  const [isActive, setIsActive] = useState(defaultValues?.isActive ?? true)
 
   const initialImage = getInitialImage(defaultValues?.image)
   const [imageId, setImageId] = useState<number | null>(initialImage.id)
@@ -71,10 +68,10 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
-    if (!title.trim()) newErrors.title = 'Le titre est requis'
-    if (!date) newErrors.date = 'La date est requise'
-    if (!time) newErrors.time = "L'heure est requise"
-    else if (!/^\d{2}:\d{2}$/.test(time)) newErrors.time = 'Format attendu : HH:mm'
+    if (!name.trim()) newErrors.name = 'Le nom est requis'
+    if (capacity && (isNaN(Number(capacity)) || Number(capacity) < 1)) {
+      newErrors.capacity = 'La capacité doit être un nombre positif'
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -85,7 +82,7 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
       const formData = new FormData()
       formData.append('file', file)
       formData.append('_payload', JSON.stringify({
-        alt: title.trim() || file.name,
+        alt: name.trim() || file.name,
         church: churchId,
       }))
 
@@ -115,6 +112,12 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  function toggleEquipment(value: string) {
+    setEquipment((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    )
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
@@ -123,20 +126,20 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
 
     try {
       const url = mode === 'edit' && defaultValues?.id
-        ? `/api/events/${defaultValues.id}`
-        : '/api/events'
+        ? `/api/rooms/${defaultValues.id}`
+        : '/api/rooms'
 
       const res = await fetch(url, {
         method: mode === 'edit' ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: title.trim(),
-          date,
-          time,
-          room: roomId ? Number(roomId) : null,
-          location: location.trim() || undefined,
+          name: name.trim(),
+          capacity: capacity ? Number(capacity) : null,
+          floor: floor.trim() || undefined,
           description: description.trim() || undefined,
-          visibility,
+          equipment: equipment.length > 0 ? equipment : undefined,
+          accessibility,
+          isActive,
           image: imageId || '',
           church: churchId,
         }),
@@ -150,9 +153,9 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
       }
 
       toast.success(
-        mode === 'create' ? 'Événement ajouté ✓' : 'Événement modifié ✓'
+        mode === 'create' ? 'Salle ajoutée' : 'Salle modifiée',
       )
-      router.push('/dashboard/events')
+      router.push('/dashboard/rooms')
       router.refresh()
     } catch {
       toast.error('Une erreur est survenue. Veuillez réessayer.')
@@ -163,83 +166,53 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
-      {/* Ligne 1 : Titre (pleine largeur) */}
+      {/* Nom (pleine largeur) */}
       <div className="flex flex-col gap-2">
-        <Label htmlFor="title">Titre *</Label>
+        <Label htmlFor="name">Nom de la salle *</Label>
         <Input
-          id="title"
-          placeholder="Concert de Noël"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          aria-invalid={!!errors.title}
+          id="name"
+          placeholder="Salle principale"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          aria-invalid={!!errors.name}
         />
-        {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
       </div>
 
-      {/* Ligne 2 : Date / Heure / Lieu sur desktop */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Capacité / Étage */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="date">Date *</Label>
+          <Label htmlFor="capacity">Capacité (personnes)</Label>
           <Input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            aria-invalid={!!errors.date}
+            id="capacity"
+            type="number"
+            min="1"
+            placeholder="50"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            aria-invalid={!!errors.capacity}
           />
-          {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
+          {errors.capacity && <p className="text-sm text-destructive">{errors.capacity}</p>}
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="time">Heure *</Label>
+          <Label htmlFor="floor">Étage / Localisation</Label>
           <Input
-            id="time"
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            aria-invalid={!!errors.time}
-          />
-          {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="location">Lieu</Label>
-          <Input
-            id="location"
-            placeholder="Temple de Belleville"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            id="floor"
+            placeholder="RDC, 1er étage, Sous-sol..."
+            value={floor}
+            onChange={(e) => setFloor(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Salle */}
-      {rooms.length > 0 && (
-        <div className="flex flex-col gap-2 max-w-xs">
-          <Label htmlFor="room">Salle</Label>
-          <Select value={roomId || 'none'} onValueChange={(v) => setRoomId(v === 'none' ? '' : v)}>
-            <SelectTrigger id="room">
-              <SelectValue placeholder="Aucune salle" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Aucune salle</SelectItem>
-              {rooms.map((r) => (
-                <SelectItem key={r.id} value={String(r.id)}>
-                  {r.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Ligne 3 : Description + Image cote a cote sur desktop */}
+      {/* Description + Image */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
-            placeholder="Détails de l'événement..."
+            placeholder="Grande salle avec estrade..."
             rows={6}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -248,7 +221,7 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>Image / Affiche</Label>
+          <Label>Photo de la salle</Label>
           {imagePreview ? (
             <div className="relative">
               <Image
@@ -279,7 +252,7 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
               ) : (
                 <>
                   <Upload className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground text-center">Cliquer pour ajouter une image</p>
+                  <p className="text-sm text-muted-foreground text-center">Cliquer pour ajouter une photo</p>
                 </>
               )}
             </div>
@@ -297,18 +270,42 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
         </div>
       </div>
 
-      {/* Ligne 4 : Visibilite */}
-      <div className="flex flex-col gap-2 max-w-xs">
-        <Label htmlFor="visibility">Visibilité</Label>
-        <Select value={visibility} onValueChange={setVisibility}>
-          <SelectTrigger id="visibility">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="public">Public — visible sur le site</SelectItem>
-            <SelectItem value="internal">Interne — membres uniquement</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Équipements */}
+      <div className="flex flex-col gap-3">
+        <Label>Équipements</Label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {EQUIPMENT_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Checkbox
+                checked={equipment.includes(opt.value)}
+                onCheckedChange={() => toggleEquipment(opt.value)}
+              />
+              <span className="text-sm">{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Accessibilité + Disponibilité */}
+      <div className="flex flex-col gap-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Checkbox
+            checked={accessibility}
+            onCheckedChange={(checked) => setAccessibility(checked === true)}
+          />
+          <span className="text-sm">Accessible PMR (personnes à mobilité réduite)</span>
+        </label>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Checkbox
+            checked={isActive}
+            onCheckedChange={(checked) => setIsActive(checked === true)}
+          />
+          <span className="text-sm">Salle actuellement disponible</span>
+        </label>
       </div>
 
       {/* Actions */}
@@ -322,7 +319,7 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/dashboard/events')}
+          onClick={() => router.push('/dashboard/rooms')}
         >
           Annuler
         </Button>

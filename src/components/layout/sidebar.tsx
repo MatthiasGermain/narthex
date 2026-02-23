@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Calendar, Church } from 'lucide-react'
+import { Home, Calendar, DoorOpen, Church } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
 
 const navItems = [
   { href: '/dashboard', label: 'Accueil', icon: Home, exact: true },
   { href: '/dashboard/events', label: 'Événements', icon: Calendar, exact: false },
+  { href: '/dashboard/rooms', label: 'Salles', icon: DoorOpen, exact: false },
   { href: '/dashboard/profile', label: 'Profil église', icon: Church, exact: true },
 ]
 

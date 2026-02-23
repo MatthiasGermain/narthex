@@ -188,3 +188,18 @@
 .animate-page-enter {
   animation: page-enter 250ms ease-out;
 }
+
+/* ═══════════════════════════════════════════════════════
+   Navigation progress bar
+   ═══════════════════════════════════════════════════════ */
+.navigation-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+  transform-origin: left;
+  transition: transform 300ms ease;
+  z-index: 9999;
+}

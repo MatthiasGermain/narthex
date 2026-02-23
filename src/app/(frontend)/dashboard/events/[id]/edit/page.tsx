@@ -19,13 +19,23 @@ export default async function EditEventPage({
   if (!user) return null
   if (!tenant) notFound()
 
-  const event = await payload.findByID({
-    collection: 'events',
-    id: eventId,
-    depth: 1,
-    overrideAccess: false,
-    user,
-  }).catch(() => null)
+  const [event, { docs: roomDocs }] = await Promise.all([
+    payload.findByID({
+      collection: 'events',
+      id: eventId,
+      depth: 1,
+      overrideAccess: false,
+      user,
+    }).catch(() => null),
+    payload.find({
+      collection: 'rooms',
+      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      sort: 'name',
+      limit: 100,
+      depth: 0,
+      overrideAccess: true,
+    }),
+  ])
 
   if (!event) notFound()
 
@@ -35,6 +45,11 @@ export default async function EditEventPage({
 
   // Extraire la date au format YYYY-MM-DD depuis l'ISO string de Payload
   const dateValue = event.date ? new Date(event.date).toISOString().split('T')[0] : ''
+
+  const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
+
+  // Extraire l'ID de la salle (peut être un objet ou un number selon le depth)
+  const eventRoomId = typeof event.room === 'object' ? (event.room as { id: number } | null)?.id : event.room as number | null | undefined
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,6 +67,7 @@ export default async function EditEventPage({
       <EventForm
         mode="edit"
         churchId={tenant.id}
+        rooms={rooms}
         defaultValues={{
           id: event.id,
           title: event.title,
@@ -60,6 +76,7 @@ export default async function EditEventPage({
           location: event.location ?? '',
           description: event.description ?? '',
           visibility: event.visibility as 'public' | 'internal',
+          room: eventRoomId ?? null,
           image: event.image as number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null,
         }}
       />

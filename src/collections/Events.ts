@@ -92,9 +92,21 @@ export const Events: CollectionConfig = {
       ],
     },
     {
+      name: 'room',
+      type: 'relationship',
+      relationTo: 'rooms',
+      label: 'Salle',
+      admin: {
+        description: 'Salle utilisée pour cet événement (optionnel)',
+      },
+    },
+    {
       name: 'location',
       type: 'text',
       label: 'Lieu',
+      admin: {
+        description: 'Lieu extérieur (si pas de salle sélectionnée)',
+      },
     },
     {
       name: 'description',

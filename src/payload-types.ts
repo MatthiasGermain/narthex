@@ -73,6 +73,7 @@ export interface Config {
     'church-branding': ChurchBranding;
     'church-profiles': ChurchProfile;
     events: Event;
+    rooms: Room;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     'church-branding': ChurchBrandingSelect<false> | ChurchBrandingSelect<true>;
     'church-profiles': ChurchProfilesSelect<false> | ChurchProfilesSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
+    rooms: RoomsSelect<false> | RoomsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -324,6 +326,13 @@ export interface Event {
   title: string;
   date: string;
   time: string;
+  /**
+   * Salle utilisée pour cet événement (optionnel)
+   */
+  room?: (number | null) | Room;
+  /**
+   * Lieu extérieur (si pas de salle sélectionnée)
+   */
   location?: string | null;
   description?: string | null;
   /**
@@ -331,6 +340,31 @@ export interface Event {
    */
   image?: (number | null) | Media;
   visibility: 'public' | 'internal';
+  /**
+   * Auto-assigné au créateur
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Auto-assigné à votre église
+   */
+  church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rooms".
+ */
+export interface Room {
+  id: number;
+  name: string;
+  capacity?: number | null;
+  floor?: string | null;
+  description?: string | null;
+  equipment?: ('projector' | 'sound' | 'piano' | 'wifi' | 'kitchen' | 'board')[] | null;
+  image?: (number | null) | Media;
+  accessibility?: boolean | null;
+  isActive?: boolean | null;
   /**
    * Auto-assigné au créateur
    */
@@ -389,6 +423,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'events';
         value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'rooms';
+        value: number | Room;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -592,10 +630,29 @@ export interface EventsSelect<T extends boolean = true> {
   title?: T;
   date?: T;
   time?: T;
+  room?: T;
   location?: T;
   description?: T;
   image?: T;
   visibility?: T;
+  createdBy?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rooms_select".
+ */
+export interface RoomsSelect<T extends boolean = true> {
+  name?: T;
+  capacity?: T;
+  floor?: T;
+  description?: T;
+  equipment?: T;
+  image?: T;
+  accessibility?: T;
+  isActive?: T;
   createdBy?: T;
   church?: T;
   updatedAt?: T;

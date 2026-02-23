@@ -28,6 +28,18 @@ function getThumbUrl(image: unknown): string | null {
   return img.sizes?.thumbnail?.url || img.url || null
 }
 
+function getRoomName(room: unknown): string | null {
+  if (!room || typeof room !== 'object') return null
+  return (room as { name?: string }).name || null
+}
+
+function getLocationLabel(event: { room?: unknown; location?: string | null }): string {
+  const roomName = getRoomName(event.room)
+  if (roomName && event.location) return `${roomName} — ${event.location}`
+  if (roomName) return roomName
+  return event.location || ''
+}
+
 function canUserDelete(
   event: { createdBy?: number | { id: number } | null },
   userId: number,
@@ -109,8 +121,8 @@ export default async function EventsPage() {
                       <p className="text-sm text-muted-foreground mt-1">
                         {formatDateShort(event.date)} à {formatTime(event.time)}
                       </p>
-                      {event.location && (
-                        <p className="text-sm text-muted-foreground">{event.location}</p>
+                      {getLocationLabel(event) && (
+                        <p className="text-sm text-muted-foreground">{getLocationLabel(event)}</p>
                       )}
                       <Badge
                         variant="outline"
@@ -142,8 +154,8 @@ export default async function EventsPage() {
                       <p className="text-sm text-muted-foreground mt-1">
                         {formatDateShort(event.date)} à {formatTime(event.time)}
                       </p>
-                      {event.location && (
-                        <p className="text-sm text-muted-foreground">{event.location}</p>
+                      {getLocationLabel(event) && (
+                        <p className="text-sm text-muted-foreground">{getLocationLabel(event)}</p>
                       )}
                     </div>
                     <EventActions
@@ -194,7 +206,7 @@ export default async function EventsPage() {
                           <TableCell className="font-medium">{event.title}</TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateShort(event.date)}</TableCell>
                           <TableCell className="text-muted-foreground">{formatTime(event.time)}</TableCell>
-                          <TableCell className="text-muted-foreground">{event.location || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground">{getLocationLabel(event) || '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={event.visibility === 'public' ? 'border-primary/40 text-primary' : 'border-muted-foreground/40 text-muted-foreground'}>
                               {event.visibility === 'public' ? 'Public' : 'Interne'}
@@ -250,7 +262,7 @@ export default async function EventsPage() {
                           <TableCell className="font-medium">{event.title}</TableCell>
                           <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateShort(event.date)}</TableCell>
                           <TableCell className="text-muted-foreground">{formatTime(event.time)}</TableCell>
-                          <TableCell className="text-muted-foreground">{event.location || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground">{getLocationLabel(event) || '—'}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="border-muted-foreground/40 text-muted-foreground">
                               {event.visibility === 'public' ? 'Public' : 'Interne'}
