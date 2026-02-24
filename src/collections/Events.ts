@@ -1,15 +1,14 @@
-import type { Access, CollectionConfig } from 'payload'
+import type { Access, CollectionConfig, Where } from 'payload'
 import { isAuthenticated, getUserTenantIDs } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
+const publicOnly: Where = { visibility: { equals: 'public' } }
+
 const readPublicOrOwnChurch: Access = ({ req: { user } }) => {
-  // Visiteurs anonymes : uniquement les events publics
-  if (!user) return { visibility: { equals: 'public' } }
-  // Super-admin : tout
+  if (!user) return publicOnly
   if ((user as { role?: string }).role === 'super-admin') return true
-  // Authentifié : events publics + events internes de son église
   const tenantIDs = getUserTenantIDs(user)
-  if (tenantIDs.length === 0) return { visibility: { equals: 'public' } }
+  if (tenantIDs.length === 0) return publicOnly
   return {
     or: [
       { visibility: { equals: 'public' } },
