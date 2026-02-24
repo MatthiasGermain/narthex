@@ -3,36 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-
-const DAY_OPTIONS = [
-  { label: 'Lundi', value: 'monday' },
-  { label: 'Mardi', value: 'tuesday' },
-  { label: 'Mercredi', value: 'wednesday' },
-  { label: 'Jeudi', value: 'thursday' },
-  { label: 'Vendredi', value: 'friday' },
-  { label: 'Samedi', value: 'saturday' },
-  { label: 'Dimanche', value: 'sunday' },
-]
-
-interface ServiceEntry {
-  label: string
-  day: string
-  time: string
-  id?: string | null
-}
+import { Separator } from '@/components/ui/separator'
 
 interface ProfileData {
   description?: string
@@ -46,7 +21,6 @@ interface ProfileData {
     phone?: string
     website?: string
   }
-  services?: ServiceEntry[]
   social?: {
     facebook?: string
     instagram?: string
@@ -66,40 +40,19 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Section 1 — Présentation
   const [description, setDescription] = useState(defaultValues?.description ?? '')
 
-  // Section 2 — Adresse
   const [street, setStreet] = useState(defaultValues?.address?.street ?? '')
   const [postalCode, setPostalCode] = useState(defaultValues?.address?.postalCode ?? '')
   const [city, setCity] = useState(defaultValues?.address?.city ?? '')
 
-  // Section 3 — Contact
   const [email, setEmail] = useState(defaultValues?.contact?.email ?? '')
   const [phone, setPhone] = useState(defaultValues?.contact?.phone ?? '')
   const [website, setWebsite] = useState(defaultValues?.contact?.website ?? '')
 
-  // Section 4 — Horaires
-  const [services, setServices] = useState<ServiceEntry[]>(
-    defaultValues?.services?.map((s) => ({ ...s })) ?? []
-  )
-
-  // Section 5 — Réseaux sociaux
   const [facebook, setFacebook] = useState(defaultValues?.social?.facebook ?? '')
   const [instagram, setInstagram] = useState(defaultValues?.social?.instagram ?? '')
   const [youtube, setYoutube] = useState(defaultValues?.social?.youtube ?? '')
-
-  function addService() {
-    setServices([...services, { label: '', day: 'sunday', time: '10:00' }])
-  }
-
-  function removeService(index: number) {
-    setServices(services.filter((_, i) => i !== index))
-  }
-
-  function updateService(index: number, field: keyof ServiceEntry, value: string) {
-    setServices(services.map((s, i) => (i === index ? { ...s, [field]: value } : s)))
-  }
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
@@ -107,31 +60,18 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Format email invalide'
     }
-
     if (website && !/^https?:\/\/.+/.test(website)) {
       newErrors.website = 'URL invalide (doit commencer par http:// ou https://)'
     }
-
     if (facebook && !/^https?:\/\/.+/.test(facebook)) {
       newErrors.facebook = 'URL invalide'
     }
-
     if (instagram && !/^https?:\/\/.+/.test(instagram)) {
       newErrors.instagram = 'URL invalide'
     }
-
     if (youtube && !/^https?:\/\/.+/.test(youtube)) {
       newErrors.youtube = 'URL invalide'
     }
-
-    services.forEach((s, i) => {
-      if (s.label && !s.time) {
-        newErrors[`service-${i}-time`] = 'Heure requise'
-      }
-      if (s.time && !/^\d{2}:\d{2}$/.test(s.time)) {
-        newErrors[`service-${i}-time`] = 'Format HH:mm'
-      }
-    })
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -144,9 +84,6 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
     setLoading(true)
 
     try {
-      // Filtrer les services vides
-      const validServices = services.filter((s) => s.label.trim())
-
       const url = mode === 'edit' && profileId
         ? `/api/church-profiles/${profileId}`
         : '/api/church-profiles'
@@ -166,11 +103,6 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
             phone: phone.trim() || undefined,
             website: website.trim() || undefined,
           },
-          services: validServices.length > 0 ? validServices.map((s) => ({
-            label: s.label.trim(),
-            day: s.day,
-            time: s.time,
-          })) : [],
           social: {
             facebook: facebook.trim() || undefined,
             instagram: instagram.trim() || undefined,
@@ -187,7 +119,7 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
         return
       }
 
-      toast.success('Profil enregistré ✓')
+      toast.success('Profil enregistré')
       router.refresh()
     } catch {
       toast.error('Une erreur est survenue. Veuillez réessayer.')
@@ -197,75 +129,65 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
-      {/* Section 1 — Présentation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Présentation</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="description">Description de l&apos;église</Label>
-            <Textarea
-              id="description"
-              placeholder="Présentez votre église en quelques paragraphes..."
-              rows={6}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Texte affiché sur la page « À propos »
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-8 max-w-2xl">
+      {/* Présentation */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-semibold">Présentation</h2>
+          <p className="text-sm text-muted-foreground">Texte affiché sur la page publique de votre église</p>
+        </div>
+        <Textarea
+          id="description"
+          placeholder="Présentez votre église en quelques paragraphes..."
+          rows={5}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </section>
 
-      {/* Section 2 — Adresse */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Adresse</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="street">Rue</Label>
+      <Separator />
+
+      {/* Adresse */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-semibold">Adresse</h2>
+          <p className="text-sm text-muted-foreground">Localisation du lieu de culte</p>
+        </div>
+        <div className="flex flex-col gap-4">
+          <Input
+            id="street"
+            placeholder="12 rue de la Paix"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+          />
+          <div className="grid grid-cols-[120px_1fr] gap-3">
             <Input
-              id="street"
-              placeholder="12 rue de la Paix"
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
+              id="postalCode"
+              placeholder="75001"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+            />
+            <Input
+              id="city"
+              placeholder="Paris"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="postalCode">Code postal</Label>
-              <Input
-                id="postalCode"
-                placeholder="75001"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="city">Ville</Label>
-              <Input
-                id="city"
-                placeholder="Paris"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* Section 3 — Contact */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Contact</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <Separator />
+
+      {/* Contact */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-semibold">Contact</h2>
+          <p className="text-sm text-muted-foreground">Coordonnées visibles par les visiteurs</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email de contact</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
@@ -285,95 +207,29 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="website">Site web externe</Label>
-            <Input
-              id="website"
-              placeholder="https://exemple.com"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              aria-invalid={!!errors.website}
-            />
-            {errors.website && <p className="text-sm text-destructive">{errors.website}</p>}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="website">Site web</Label>
+          <Input
+            id="website"
+            placeholder="https://mon-eglise.fr"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            aria-invalid={!!errors.website}
+          />
+          {errors.website && <p className="text-sm text-destructive">{errors.website}</p>}
+        </div>
+      </section>
 
-      {/* Section 4 — Horaires des cultes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Horaires des cultes</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {services.map((service, index) => (
-            <div key={index} className="flex flex-col gap-3 rounded-md border p-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`service-label-${index}`}>Type de culte</Label>
-                <Input
-                  id={`service-label-${index}`}
-                  placeholder="Culte dominical"
-                  value={service.label}
-                  onChange={(e) => updateService(index, 'label', e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-2">
-                  <Label>Jour</Label>
-                  <Select
-                    value={service.day}
-                    onValueChange={(v) => updateService(index, 'day', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DAY_OPTIONS.map((d) => (
-                        <SelectItem key={d.value} value={d.value}>
-                          {d.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor={`service-time-${index}`}>Heure</Label>
-                  <Input
-                    id={`service-time-${index}`}
-                    type="time"
-                    value={service.time}
-                    onChange={(e) => updateService(index, 'time', e.target.value)}
-                    aria-invalid={!!errors[`service-${index}-time`]}
-                  />
-                  {errors[`service-${index}-time`] && (
-                    <p className="text-sm text-destructive">{errors[`service-${index}-time`]}</p>
-                  )}
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="self-end text-destructive hover:text-destructive"
-                onClick={() => removeService(index)}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Supprimer
-              </Button>
-            </div>
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={addService}>
-            <Plus className="h-4 w-4 mr-1" />
-            Ajouter un horaire
-          </Button>
-        </CardContent>
-      </Card>
+      <Separator />
 
-      {/* Section 5 — Réseaux sociaux */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Réseaux sociaux</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      {/* Réseaux sociaux */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-semibold">Réseaux sociaux</h2>
+          <p className="text-sm text-muted-foreground">Liens vers vos pages sur les réseaux</p>
+        </div>
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="facebook">Facebook</Label>
             <Input
@@ -407,11 +263,13 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
             />
             {errors.youtube && <p className="text-sm text-destructive">{errors.youtube}</p>}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
+
+      <Separator />
 
       {/* Actions */}
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3">
         <Button type="submit" disabled={loading}>
           {loading ? 'Enregistrement...' : 'Enregistrer'}
         </Button>

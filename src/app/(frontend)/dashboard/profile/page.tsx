@@ -37,12 +37,6 @@ export default async function DashboardProfilePage() {
                   phone: profile.contact?.phone ?? undefined,
                   website: profile.contact?.website ?? undefined,
                 },
-                services: profile.services?.map((s) => ({
-                  label: s.label,
-                  day: s.day,
-                  time: s.time,
-                  id: s.id,
-                })),
                 social: {
                   facebook: profile.social?.facebook ?? undefined,
                   instagram: profile.social?.instagram ?? undefined,

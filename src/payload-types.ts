@@ -75,6 +75,7 @@ export interface Config {
     events: Event;
     rooms: Room;
     members: Member;
+    'service-plans': ServicePlan;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +91,7 @@ export interface Config {
     events: EventsSelect<false> | EventsSelect<true>;
     rooms: RoomsSelect<false> | RoomsSelect<true>;
     members: MembersSelect<false> | MembersSelect<true>;
+    'service-plans': ServicePlansSelect<false> | ServicePlansSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -181,6 +183,15 @@ export interface Church {
     | null;
   settings?: {
     enabledModules?: 'events'[] | null;
+    /**
+     * Rôles assignables dans les plannings de culte (présidence, louange, etc.)
+     */
+    serviceRoles?:
+      | {
+          label: string;
+          id?: string | null;
+        }[]
+      | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -408,6 +419,43 @@ export interface Member {
   createdAt: string;
 }
 /**
+ * Plannings de culte : qui fait quoi chaque dimanche
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "service-plans".
+ */
+export interface ServicePlan {
+  id: number;
+  date: string;
+  /**
+   * Assignez des membres à chaque rôle pour ce culte
+   */
+  assignments?:
+    | {
+        /**
+         * Ex : Présidence, Louange, Sono...
+         */
+        role: string;
+        members?: (number | Member)[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Informations complémentaires pour ce dimanche
+   */
+  notes?: string | null;
+  /**
+   * Auto-assigné au créateur
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Auto-assigné à votre église
+   */
+  church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -462,6 +510,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'members';
         value: number | Member;
+      } | null)
+    | ({
+        relationTo: 'service-plans';
+        value: number | ServicePlan;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -594,6 +646,12 @@ export interface ChurchesSelect<T extends boolean = true> {
     | T
     | {
         enabledModules?: T;
+        serviceRoles?:
+          | T
+          | {
+              label?: T;
+              id?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
@@ -707,6 +765,25 @@ export interface MembersSelect<T extends boolean = true> {
   photo?: T;
   isActive?: T;
   user?: T;
+  createdBy?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "service-plans_select".
+ */
+export interface ServicePlansSelect<T extends boolean = true> {
+  date?: T;
+  assignments?:
+    | T
+    | {
+        role?: T;
+        members?: T;
+        id?: T;
+      };
+  notes?: T;
   createdBy?: T;
   church?: T;
   updatedAt?: T;

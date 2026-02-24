@@ -1,4 +1,4 @@
-import { Home, Calendar, DoorOpen, Users, Church } from 'lucide-react'
+import { Home, ClipboardList, Calendar, DoorOpen, Users, Church } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface NavItem {
@@ -11,6 +11,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Accueil', icon: Home, exact: true },
+  { href: '/dashboard/planning', label: 'Cultes', icon: ClipboardList, exact: false },
   { href: '/dashboard/events', label: 'Événements', icon: Calendar, exact: false },
   { href: '/dashboard/rooms', label: 'Salles', icon: DoorOpen, exact: false },
   { href: '/dashboard/members', label: 'Membres', icon: Users, exact: false },

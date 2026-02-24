@@ -1,5 +1,6 @@
 import type { CollectionConfig, CollectionBeforeValidateHook } from 'payload'
 import { isSuperAdmin, readOwnChurchById } from '../access'
+import { DEFAULT_SERVICE_ROLES } from '../lib/service-roles'
 
 function slugify(text: string): string {
   return text
@@ -79,6 +80,23 @@ export const Churches: CollectionConfig = {
             { label: 'Événements', value: 'events' },
           ],
           defaultValue: ['events'],
+        },
+        {
+          name: 'serviceRoles',
+          type: 'array',
+          label: 'Rôles de culte',
+          admin: {
+            description: 'Rôles assignables dans les plannings de culte (présidence, louange, etc.)',
+          },
+          defaultValue: DEFAULT_SERVICE_ROLES,
+          fields: [
+            {
+              name: 'label',
+              type: 'text',
+              required: true,
+              label: 'Nom du rôle',
+            },
+          ],
         },
       ],
     },
