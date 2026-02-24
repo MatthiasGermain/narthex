@@ -1,10 +1,10 @@
 import type { CollectionConfig } from 'payload'
-import { isAuthenticated, isAdmin, readOwnChurch } from '../access'
+import { isAuthenticated, isAdmin } from '../access'
 
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
-    read: readOwnChurch,
+    read: () => true,
     create: isAuthenticated,
     update: isAdmin,
     delete: isAdmin,
