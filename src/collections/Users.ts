@@ -1,4 +1,10 @@
-import type { CollectionConfig, FieldAccess } from 'payload'
+import type {
+  Access,
+  CollectionAfterChangeHook,
+  CollectionConfig,
+  CollectionBeforeChangeHook,
+  FieldAccess,
+} from 'payload'
 import { isSuperAdmin, isSuperAdminCheck, belongsToChurch, getUserTenantIDs } from '../access'
 
 const updateScopedToTenant = ({ req: { user } }: { req: { user: unknown } }) => {
@@ -15,6 +21,99 @@ const onlySuperAdminCanEditRole: FieldAccess = ({ req: { user } }) => {
   return (user as { role?: string })?.role === 'super-admin'
 }
 
+// Allow admin-church to create user accounts (hook enforces volunteer-only)
+const canCreateUser: Access = ({ req: { user } }) => {
+  if (!user) return false
+  const u = user as { role?: string }
+  if (u.role === 'super-admin') return true
+  if (u.role === 'admin-church') return true
+  return false
+}
+
+// Force role=volunteer when admin-church creates a user (security)
+const enforceVolunteerRole: CollectionBeforeChangeHook = ({ req, operation, data }) => {
+  if (operation === 'create') {
+    const user = req.user as { role?: string } | undefined
+    if (user?.role === 'admin-church') {
+      data.role = 'volunteer'
+    }
+  }
+  return data
+}
+
+// Auto-assign the admin-church's tenant to newly created users
+const assignTenantOnCreate: CollectionBeforeChangeHook = ({ req, operation, data }) => {
+  if (operation === 'create') {
+    const user = req.user as {
+      role?: string
+      tenants?: Array<{ tenant: number | string | { id: number | string } }>
+    } | undefined
+    if (user?.role === 'admin-church' && user.tenants?.length) {
+      const tenantId = typeof user.tenants[0].tenant === 'object'
+        ? user.tenants[0].tenant.id
+        : user.tenants[0].tenant
+      if (!data.tenants || data.tenants.length === 0) {
+        data.tenants = [{ tenant: tenantId }]
+      }
+    }
+  }
+  return data
+}
+
+// Auto-create a Member entry when a new User is created (if not already linked)
+const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
+  if (operation !== 'create') return doc
+
+  // Skip super-admins (they don't belong to a single church)
+  if (doc.role === 'super-admin') return doc
+
+  // Get the tenant ID from the new user's tenants array
+  const tenants = doc.tenants as Array<{ tenant: number | string | { id: number | string } }> | undefined
+  if (!tenants?.length) return doc
+
+  const tenantId = Number(
+    typeof tenants[0].tenant === 'object'
+      ? (tenants[0].tenant as { id: number | string }).id
+      : tenants[0].tenant,
+  )
+
+  // Check if a Member already exists linked to this user
+  const existing = await req.payload.find({
+    collection: 'members',
+    where: { user: { equals: doc.id } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+
+  if (existing.docs.length > 0) return doc
+
+  // Extract name from email (fallback)
+  const emailParts = (doc.email as string).split('@')[0].split('.')
+  const firstName = emailParts[0]?.charAt(0).toUpperCase() + (emailParts[0]?.slice(1) || '')
+  const lastName = emailParts[1]
+    ? emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1)
+    : ''
+
+  await req.payload.create({
+    collection: 'members',
+    data: {
+      firstName,
+      lastName: lastName || firstName,
+      email: doc.email as string,
+      churchRole: 'membre',
+      isActive: true,
+      user: doc.id,
+      church: tenantId,
+    },
+    overrideAccess: true,
+    req,
+  })
+
+  return doc
+}
+
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
@@ -23,11 +122,29 @@ export const Users: CollectionConfig = {
   auth: {
     maxLoginAttempts: 5,
     lockTime: 600000,
+    forgotPassword: {
+      generateEmailSubject: () => 'Définissez votre mot de passe — Narthex',
+      generateEmailHTML: (args) => {
+        const token = args?.token
+        const url = `${process.env.NEXT_PUBLIC_SERVER_URL}/login/reset-password?token=${token}`
+        return `
+          <h2>Bienvenue sur Narthex</h2>
+          <p>Un compte a été créé pour vous. Cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
+          <p><a href="${url}">Définir mon mot de passe</a></p>
+          <p>Ce lien expire dans 1 heure.</p>
+          <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
+        `
+      },
+    },
+  },
+  hooks: {
+    beforeChange: [enforceVolunteerRole, assignTenantOnCreate],
+    afterChange: [autoCreateMember],
   },
   access: {
     admin: ({ req }) => isSuperAdminCheck(req.user),
     read: belongsToChurch,
-    create: isSuperAdmin,
+    create: canCreateUser,
     update: updateScopedToTenant,
     delete: isSuperAdmin,
   },

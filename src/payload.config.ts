@@ -14,6 +14,7 @@ import { ChurchBranding } from './collections/ChurchBranding'
 import { ChurchProfiles } from './collections/ChurchProfiles'
 import { Events } from './collections/Events'
 import { Rooms } from './collections/Rooms'
+import { Members } from './collections/Members'
 import { isSuperAdminCheck } from './access/roles'
 
 const filename = fileURLToPath(import.meta.url)
@@ -40,7 +41,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Churches, ChurchBranding, ChurchProfiles, Events, Rooms],
+  collections: [Users, Media, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {
@@ -67,6 +68,9 @@ export default buildConfig({
           customTenantField: true,
         },
         rooms: {
+          customTenantField: true,
+        },
+        members: {
           customTenantField: true,
         },
         media: {},

@@ -74,6 +74,7 @@ export interface Config {
     'church-profiles': ChurchProfile;
     events: Event;
     rooms: Room;
+    members: Member;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     'church-profiles': ChurchProfilesSelect<false> | ChurchProfilesSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     rooms: RoomsSelect<false> | RoomsSelect<true>;
+    members: MembersSelect<false> | MembersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -378,6 +380,35 @@ export interface Room {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members".
+ */
+export interface Member {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  churchRole?: ('pasteur' | 'diacre' | 'ancien' | 'responsable' | 'membre' | 'visiteur') | null;
+  birthDate?: string | null;
+  photo?: (number | null) | Media;
+  isActive?: boolean | null;
+  /**
+   * Lier ce membre à un compte utilisateur Narthex (optionnel)
+   */
+  user?: (number | null) | User;
+  /**
+   * Auto-assigné au créateur
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Auto-assigné à votre église
+   */
+  church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -427,6 +458,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'rooms';
         value: number | Room;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -653,6 +688,25 @@ export interface RoomsSelect<T extends boolean = true> {
   image?: T;
   accessibility?: T;
   isActive?: T;
+  createdBy?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members_select".
+ */
+export interface MembersSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  email?: T;
+  phone?: T;
+  churchRole?: T;
+  birthDate?: T;
+  photo?: T;
+  isActive?: T;
+  user?: T;
   createdBy?: T;
   church?: T;
   updatedAt?: T;
