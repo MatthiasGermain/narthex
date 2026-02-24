@@ -3,18 +3,10 @@ import Image from 'next/image'
 import { Users, Plus, Mail, Phone, UserCheck } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { CHURCH_ROLE_LABELS } from '@/lib/church-roles'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MemberActions } from '@/components/features/members/member-actions'
-
-const CHURCH_ROLE_LABELS: Record<string, string> = {
-  pasteur: 'Pasteur',
-  diacre: 'Diacre',
-  ancien: 'Ancien',
-  responsable: 'Responsable',
-  membre: 'Membre',
-  visiteur: 'Visiteur',
-}
 
 function getThumbUrl(photo: unknown): string | null {
   if (!photo || typeof photo !== 'object') return null

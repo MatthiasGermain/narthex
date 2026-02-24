@@ -33,10 +33,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen">
       <NavigationProgress />
       <TenantTheme colors={branding?.colors || {}} />
-      <Sidebar churchName={churchName} />
+      <Sidebar churchName={churchName} userRole={user.role} />
 
       <div className="md:pl-60 min-h-screen flex flex-col">
-        <Header churchName={churchName} userEmail={user.email} />
+        <Header churchName={churchName} userEmail={user.email} userRole={user.role} />
 
         <main className="flex-1 p-4 sm:p-6">
           <PageTransition>{children}</PageTransition>

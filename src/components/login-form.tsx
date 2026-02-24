@@ -40,7 +40,8 @@ export function LoginForm({ redirectTo, tenantId }: { redirectTo?: string; tenan
         return
       }
 
-      router.push(redirectTo || '/dashboard')
+      const safeRedirect = redirectTo?.startsWith('/') ? redirectTo : '/dashboard'
+      router.push(safeRedirect)
       router.refresh()
     } catch {
       setError('Une erreur est survenue. Veuillez réessayer.')

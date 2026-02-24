@@ -29,3 +29,29 @@ export const belongsToChurch: Access = ({ req: { user } }) => {
     'tenants.tenant': { in: tenantIDs },
   }
 }
+
+/**
+ * Access filter pour les collections tenant-scoped (rooms, members, media, etc.)
+ * Filtre par le champ `church` au lieu de `tenants.tenant`.
+ */
+export const readOwnChurch: Access = ({ req: { user } }) => {
+  if (!user) return false
+  const u = user as UserWithTenants
+  if (u?.role === 'super-admin') return true
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length === 0) return false
+  return { church: { in: tenantIDs } }
+}
+
+/**
+ * Access filter pour la collection Churches elle-même.
+ * Un utilisateur ne peut lire que les églises auxquelles il appartient (via id).
+ */
+export const readOwnChurchById: Access = ({ req: { user } }) => {
+  if (!user) return false
+  const u = user as UserWithTenants
+  if (u?.role === 'super-admin') return true
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length === 0) return false
+  return { id: { in: tenantIDs } }
+}

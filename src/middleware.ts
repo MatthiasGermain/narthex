@@ -7,11 +7,16 @@ const CUSTOM_DOMAIN_HEADER = 'x-custom-domain'
 /** Domaine principal — pas de tenant */
 const PLATFORM_DOMAINS = ['narthex.dev', 'www.narthex.dev']
 
-/** Endpoints auth avec leurs limites */
+/** Endpoints avec rate limiting */
 const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   '/api/users/login': { limit: 5, windowMs: 15 * 60 * 1000 },
   '/api/users/forgot-password': { limit: 3, windowMs: 15 * 60 * 1000 },
   '/api/users/reset-password': { limit: 5, windowMs: 15 * 60 * 1000 },
+  '/api/users': { limit: 10, windowMs: 15 * 60 * 1000 },
+  '/api/members': { limit: 20, windowMs: 15 * 60 * 1000 },
+  '/api/events': { limit: 20, windowMs: 15 * 60 * 1000 },
+  '/api/rooms': { limit: 10, windowMs: 15 * 60 * 1000 },
+  '/api/media': { limit: 30, windowMs: 15 * 60 * 1000 },
 }
 
 function extractTenantSlug(req: NextRequest): string | null {
@@ -35,10 +40,12 @@ function extractTenantSlug(req: NextRequest): string | null {
     return parts[0]
   }
 
-  // Fallback dev: query param ?tenant=slug
-  const tenantParam = req.nextUrl.searchParams.get('tenant')
-  if (tenantParam) {
-    return tenantParam
+  // Fallback dev uniquement: query param ?tenant=slug
+  if (process.env.NODE_ENV !== 'production') {
+    const tenantParam = req.nextUrl.searchParams.get('tenant')
+    if (tenantParam) {
+      return tenantParam
+    }
   }
 
   return null

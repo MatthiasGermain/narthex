@@ -1,27 +1,6 @@
-import type { Access, CollectionConfig, CollectionBeforeChangeHook } from 'payload'
-import { isAuthenticated } from '../access'
-
-type UserWithId = {
-  id?: number
-  role?: string
-}
-
-const assignCreatedBy: CollectionBeforeChangeHook = ({ req, operation, data }) => {
-  if (operation === 'create') {
-    const user = req.user as UserWithId | undefined
-    if (user && !data.createdBy) {
-      data.createdBy = user.id
-    }
-  }
-  return data
-}
-
-const isAdminOrCreator: Access = ({ req: { user } }) => {
-  const u = user as UserWithId | undefined
-  if (!u) return false
-  if (u.role === 'super-admin' || u.role === 'admin-church') return true
-  return { createdBy: { equals: u.id } }
-}
+import type { CollectionConfig } from 'payload'
+import { isAuthenticated, readOwnChurch } from '../access'
+import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
 export const Rooms: CollectionConfig = {
   slug: 'rooms',
@@ -33,7 +12,7 @@ export const Rooms: CollectionConfig = {
     beforeChange: [assignCreatedBy],
   },
   access: {
-    read: isAuthenticated,
+    read: readOwnChurch,
     update: isAdminOrCreator,
     create: isAuthenticated,
     delete: isAdminOrCreator,
@@ -118,6 +97,7 @@ export const Rooms: CollectionConfig = {
       type: 'relationship',
       relationTo: 'churches',
       required: true,
+      index: true,
       label: 'Église',
       admin: {
         condition: (_, __, { user }) => user?.role === 'super-admin',

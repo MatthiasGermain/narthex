@@ -124,12 +124,34 @@ export const Users: CollectionConfig = {
     lockTime: 600000,
     forgotPassword: {
       generateEmailSubject: () => 'Définissez votre mot de passe — Narthex',
-      generateEmailHTML: (args) => {
+      generateEmailHTML: async (args) => {
         const token = args?.token
-        const url = `${process.env.NEXT_PUBLIC_SERVER_URL}/login/reset-password?token=${token}`
+        const user = args?.user
+        const req = args?.req
+
+        // Résoudre le slug du tenant pour construire l'URL sur le bon sous-domaine
+        let baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
+        if (req && user?.tenants?.length) {
+          const tenantId = typeof user.tenants[0].tenant === 'object'
+            ? user.tenants[0].tenant.id
+            : user.tenants[0].tenant
+          if (tenantId) {
+            const church = await req.payload.findByID({
+              collection: 'churches',
+              id: tenantId,
+              depth: 0,
+              overrideAccess: true,
+            }).catch(() => null)
+            if (church?.slug) {
+              baseUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${church.slug}.${process.env.TENANT_DOMAIN}`
+            }
+          }
+        }
+
+        const url = `${baseUrl}/login/reset-password?token=${token}`
         return `
           <h2>Bienvenue sur Narthex</h2>
-          <p>Un compte a été créé pour vous. Cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
+          <p>Cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
           <p><a href="${url}">Définir mon mot de passe</a></p>
           <p>Ce lien expire dans 1 heure.</p>
           <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>

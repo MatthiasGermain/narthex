@@ -1,5 +1,11 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, isAuthenticated } from '../access'
+import { isAdmin, readOwnChurch } from '../access'
+
+const validateHexColor = (value: string | null | undefined) => {
+  if (!value) return true
+  if (!/^#[0-9a-fA-F]{3,8}$/.test(value)) return 'Format attendu : #hex (ex: #1a73e8)'
+  return true
+}
 
 export const ChurchBranding: CollectionConfig = {
   slug: 'church-branding',
@@ -9,7 +15,7 @@ export const ChurchBranding: CollectionConfig = {
     description: 'Charte graphique : logo, favicon et couleurs',
   },
   access: {
-    read: isAuthenticated,
+    read: readOwnChurch,
     create: isAdmin,
     update: isAdmin,
     delete: isAdmin,
@@ -42,6 +48,7 @@ export const ChurchBranding: CollectionConfig = {
           name: 'primary',
           type: 'text',
           label: 'Couleur primaire',
+          validate: validateHexColor,
           admin: {
             description: 'Boutons, liens, accents (ex: #1a73e8)',
           },
@@ -50,6 +57,7 @@ export const ChurchBranding: CollectionConfig = {
           name: 'secondary',
           type: 'text',
           label: 'Couleur secondaire',
+          validate: validateHexColor,
           admin: {
             description: 'Fonds secondaires, hover (ex: #e8e0f8)',
           },
@@ -58,6 +66,7 @@ export const ChurchBranding: CollectionConfig = {
           name: 'accent',
           type: 'text',
           label: 'Couleur d\'accent',
+          validate: validateHexColor,
           admin: {
             description: 'Highlights, CTA (ex: #FCCA46). Défaut : Sunglow',
           },
@@ -66,6 +75,7 @@ export const ChurchBranding: CollectionConfig = {
           name: 'foreground',
           type: 'text',
           label: 'Couleur du texte',
+          validate: validateHexColor,
           admin: {
             description: 'Texte principal (ex: #1e2952). Défaut : Raisin',
           },
@@ -74,6 +84,7 @@ export const ChurchBranding: CollectionConfig = {
           name: 'background',
           type: 'text',
           label: 'Couleur de fond',
+          validate: validateHexColor,
           admin: {
             description: 'Fond de page (ex: #f4f0ec). Défaut : Cream',
           },

@@ -29,7 +29,7 @@ export default async function LoginPage({
   // Vérifier si déjà connecté
   if (user) {
     if (checkUserTenantAccess(user, tenant.id)) {
-      redirect(redirectTo || '/dashboard')
+      redirect(redirectTo?.startsWith('/') ? redirectTo : '/dashboard')
     }
     // User connecté mais mauvais tenant → afficher erreur ci-dessous
   }

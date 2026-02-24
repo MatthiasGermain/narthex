@@ -17,15 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-
-const CHURCH_ROLE_OPTIONS = [
-  { label: 'Pasteur', value: 'pasteur' },
-  { label: 'Diacre', value: 'diacre' },
-  { label: 'Ancien', value: 'ancien' },
-  { label: 'Responsable', value: 'responsable' },
-  { label: 'Membre', value: 'membre' },
-  { label: 'Ami / Visiteur régulier', value: 'visiteur' },
-]
+import { CHURCH_ROLE_OPTIONS } from '@/lib/church-roles'
 
 interface MemberData {
   id?: number

@@ -32,7 +32,7 @@ export function ResetPasswordForm() {
         return
       }
 
-      router.push('/login')
+      router.push('/dashboard')
     } catch {
       setError('Une erreur est survenue. Veuillez réessayer.')
     } finally {

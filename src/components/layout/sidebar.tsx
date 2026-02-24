@@ -3,19 +3,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Home, Calendar, DoorOpen, Users, Church } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
+import { getVisibleNavItems } from './nav-items'
 
-const navItems = [
-  { href: '/dashboard', label: 'Accueil', icon: Home, exact: true },
-  { href: '/dashboard/events', label: 'Événements', icon: Calendar, exact: false },
-  { href: '/dashboard/rooms', label: 'Salles', icon: DoorOpen, exact: false },
-  { href: '/dashboard/members', label: 'Membres', icon: Users, exact: false },
-  { href: '/dashboard/profile', label: 'Profil église', icon: Church, exact: true },
-]
-
-export function Sidebar({ churchName }: { churchName: string }) {
+export function Sidebar({ churchName, userRole }: { churchName: string; userRole: string }) {
   const pathname = usePathname()
 
   return (
@@ -34,7 +26,7 @@ export function Sidebar({ churchName }: { churchName: string }) {
       <Separator className="bg-sidebar-border" />
 
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => {
+        {getVisibleNavItems(userRole).map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href)

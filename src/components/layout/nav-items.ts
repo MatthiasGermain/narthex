@@ -1,0 +1,22 @@
+import { Home, Calendar, DoorOpen, Users, Church } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+export interface NavItem {
+  href: string
+  label: string
+  icon: LucideIcon
+  exact: boolean
+  adminOnly?: boolean
+}
+
+export const navItems: NavItem[] = [
+  { href: '/dashboard', label: 'Accueil', icon: Home, exact: true },
+  { href: '/dashboard/events', label: 'Événements', icon: Calendar, exact: false },
+  { href: '/dashboard/rooms', label: 'Salles', icon: DoorOpen, exact: false },
+  { href: '/dashboard/members', label: 'Membres', icon: Users, exact: false },
+  { href: '/dashboard/profile', label: 'Profil église', icon: Church, exact: true, adminOnly: true },
+]
+
+export function getVisibleNavItems(userRole: string): NavItem[] {
+  return navItems.filter((item) => !item.adminOnly || userRole !== 'volunteer')
+}

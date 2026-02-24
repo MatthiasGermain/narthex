@@ -1,33 +1,21 @@
-import type { Access, CollectionConfig, CollectionBeforeChangeHook } from 'payload'
-import { isAuthenticated } from '../access'
+import type { Access, CollectionConfig } from 'payload'
+import { isAuthenticated, getUserTenantIDs } from '../access'
+import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
-type UserWithId = {
-  id?: number
-  role?: string
-}
-
-const assignCreatedBy: CollectionBeforeChangeHook = ({ req, operation, data }) => {
-  if (operation === 'create') {
-    const user = req.user as UserWithId | undefined
-    if (user && !data.createdBy) {
-      data.createdBy = user.id
-    }
-  }
-  return data
-}
-
-const isAdminOrCreator: Access = ({ req: { user } }) => {
-  const u = user as UserWithId | undefined
-  if (!u) return false
-  if (u.role === 'super-admin' || u.role === 'admin-church') return true
-  // Les bénévoles peuvent supprimer/modifier leurs propres événements
-  return { createdBy: { equals: u.id } }
-}
-
-const readPublicOrAuthenticated: Access = ({ req: { user } }) => {
-  if (user) return true
+const readPublicOrOwnChurch: Access = ({ req: { user } }) => {
   // Visiteurs anonymes : uniquement les events publics
-  return { visibility: { equals: 'public' } }
+  if (!user) return { visibility: { equals: 'public' } }
+  // Super-admin : tout
+  if ((user as { role?: string }).role === 'super-admin') return true
+  // Authentifié : events publics + events internes de son église
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length === 0) return { visibility: { equals: 'public' } }
+  return {
+    or: [
+      { visibility: { equals: 'public' } },
+      { church: { in: tenantIDs } },
+    ],
+  }
 }
 
 export const Events: CollectionConfig = {
@@ -40,7 +28,7 @@ export const Events: CollectionConfig = {
     beforeChange: [assignCreatedBy],
   },
   access: {
-    read: readPublicOrAuthenticated,
+    read: readPublicOrOwnChurch,
     update: isAdminOrCreator,
     create: isAuthenticated,
     delete: isAdminOrCreator,
@@ -148,6 +136,7 @@ export const Events: CollectionConfig = {
       type: 'relationship',
       relationTo: 'churches',
       required: true,
+      index: true,
       label: 'Église',
       admin: {
         condition: (_, __, { user }) => user?.role === 'super-admin',

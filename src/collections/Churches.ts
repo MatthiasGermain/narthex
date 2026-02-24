@@ -1,5 +1,5 @@
 import type { CollectionConfig, CollectionBeforeValidateHook } from 'payload'
-import { isSuperAdmin, isAuthenticated } from '../access'
+import { isSuperAdmin, readOwnChurchById } from '../access'
 
 function slugify(text: string): string {
   return text
@@ -26,7 +26,7 @@ export const Churches: CollectionConfig = {
     beforeValidate: [generateSlug],
   },
   access: {
-    read: isAuthenticated,
+    read: readOwnChurchById,
     create: isSuperAdmin,
     update: isSuperAdmin,
     delete: isSuperAdmin,

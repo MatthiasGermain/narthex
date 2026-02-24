@@ -1,15 +1,7 @@
-import type { CollectionConfig, CollectionBeforeChangeHook } from 'payload'
-import { isAuthenticated, isAdmin } from '../access'
-
-const assignCreatedBy: CollectionBeforeChangeHook = ({ req, operation, data }) => {
-  if (operation === 'create') {
-    const user = req.user as { id?: number } | undefined
-    if (user && !data.createdBy) {
-      data.createdBy = user.id
-    }
-  }
-  return data
-}
+import type { CollectionConfig } from 'payload'
+import { isAdmin, readOwnChurch } from '../access'
+import { CHURCH_ROLE_OPTIONS } from '../lib/church-roles'
+import { assignCreatedBy } from './hooks'
 
 export const Members: CollectionConfig = {
   slug: 'members',
@@ -21,7 +13,7 @@ export const Members: CollectionConfig = {
     beforeChange: [assignCreatedBy],
   },
   access: {
-    read: isAuthenticated,
+    read: readOwnChurch,
     create: isAdmin,
     update: isAdmin,
     delete: isAdmin,
@@ -70,14 +62,7 @@ export const Members: CollectionConfig = {
       name: 'churchRole',
       type: 'select',
       label: 'Rôle dans l\'église',
-      options: [
-        { label: 'Pasteur', value: 'pasteur' },
-        { label: 'Diacre', value: 'diacre' },
-        { label: 'Ancien', value: 'ancien' },
-        { label: 'Responsable', value: 'responsable' },
-        { label: 'Membre', value: 'membre' },
-        { label: 'Ami / Visiteur régulier', value: 'visiteur' },
-      ],
+      options: [...CHURCH_ROLE_OPTIONS],
       defaultValue: 'membre',
     },
     {
@@ -124,6 +109,7 @@ export const Members: CollectionConfig = {
       type: 'relationship',
       relationTo: 'churches',
       required: true,
+      index: true,
       label: 'Église',
       admin: {
         condition: (_, __, { user }) => user?.role === 'super-admin',

@@ -2,22 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, Home, Calendar, DoorOpen, Users, Church } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
+import { getVisibleNavItems } from './nav-items'
 
-const navItems = [
-  { href: '/dashboard', label: 'Accueil', icon: Home, exact: true },
-  { href: '/dashboard/events', label: 'Événements', icon: Calendar, exact: false },
-  { href: '/dashboard/rooms', label: 'Salles', icon: DoorOpen, exact: false },
-  { href: '/dashboard/members', label: 'Membres', icon: Users, exact: false },
-  { href: '/dashboard/profile', label: 'Profil église', icon: Church, exact: true },
-]
-
-export function MobileNav({ churchName }: { churchName: string }) {
+export function MobileNav({ churchName, userRole }: { churchName: string; userRole: string }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -32,10 +26,12 @@ export function MobileNav({ churchName }: { churchName: string }) {
       <SheetContent side="left" className="w-64 bg-sidebar-background text-sidebar-foreground p-0">
         <SheetHeader className="px-4 py-4">
           <SheetTitle className="flex items-center gap-3 text-sidebar-foreground">
-            <img
+            <Image
               src="/brand/pictogramme_noir_sans_fond.svg"
               alt="Narthex"
-              className="h-7 w-7 invert"
+              width={28}
+              height={28}
+              className="invert"
             />
             <span className="font-heading text-sm font-bold truncate">{churchName}</span>
           </SheetTitle>
@@ -44,7 +40,7 @@ export function MobileNav({ churchName }: { churchName: string }) {
         <Separator className="bg-sidebar-border" />
 
         <nav className="px-3 py-4 space-y-1">
-          {navItems.map((item) => {
+          {getVisibleNavItems(userRole).map((item) => {
             const isActive = item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href)
