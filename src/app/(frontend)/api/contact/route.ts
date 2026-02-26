@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+let resend: Resend
+function getResend() {
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY)
+  return resend
+}
 
 // Rate limit simple en mémoire
 const rateLimit = new Map<string, { count: number; resetAt: number }>()
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: 'Narthex <noreply@narthex.dev>',
       to: 'contact@narthex.dev',
       replyTo: email,
