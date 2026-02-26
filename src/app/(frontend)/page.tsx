@@ -18,6 +18,7 @@ import { resolveTenant } from '@/lib/tenant'
 import { formatDate, formatTime, DAY_LABELS, formatServiceTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
 import { TenantTheme } from '@/components/tenant-theme'
+import { WaitingPage } from '@/components/landing/waiting-page'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -27,8 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const { tenant, profile } = await resolveTenant()
   if (!tenant) {
     return {
-      title: 'Narthex — Plateforme pour les églises',
-      description: 'Narthex remplace WordPress pour les églises francophones.',
+      title: 'Narthex, la plateforme pour les églises',
+      description: 'Une plateforme pensée pour les églises. Votre site web, votre communauté, vos cultes, une solution adaptée à vos besoins.',
     }
   }
   const description = profile?.description
@@ -44,17 +45,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage() {
   const { payload, user, tenant, branding, profile } = await resolveTenant()
 
-  // Pas de tenant → page Narthex générique
+  // Pas de tenant → waiting page Narthex
   if (!tenant) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-        <Image src="/brand/logo_noir_sans_fond.svg" alt="Narthex" width={180} height={48} className="h-12 w-auto" />
-        <h1 className="text-2xl font-heading font-bold">Narthex</h1>
-        <p className="text-muted-foreground text-center max-w-md">
-          Plateforme pour les églises. Accédez au site de votre église via son domaine.
-        </p>
-      </div>
-    )
+    return <WaitingPage />
   }
 
   // Fetch 3 prochains événements publics

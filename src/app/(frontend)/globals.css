@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes background-pan {
+  from { background-position: 0% center; }
+  to { background-position: -200% center; }
+}
+
 @theme inline {
   /* ── Shadcn semantic tokens → CSS custom properties ── */
   --color-background: var(--background);
@@ -45,6 +54,7 @@
   --color-sunglow: #FCCA46;
   --color-violet: #c9a0dc;
   --color-cream: #f4f0ec;
+  --color-cyan: #628f93;
 
   /* ── Border radius ── */
   --radius-sm: calc(var(--radius) - 4px);
