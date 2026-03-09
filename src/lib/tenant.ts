@@ -50,7 +50,7 @@ export const resolveTenant = cache(async () => {
     if (customDomain) {
       const result = await payload.find({
         collection: 'churches',
-        where: { 'domains.domain': { equals: customDomain } },
+        where: { domain: { equals: customDomain } },
         limit: 1,
         depth: 0,
         overrideAccess: true,

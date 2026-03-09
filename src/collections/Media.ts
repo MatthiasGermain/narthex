@@ -17,6 +17,7 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
+    maxFileSize: 5 * 1024 * 1024, // 5 MB
     mimeTypes: ['image/*'],
     imageSizes: [
       {

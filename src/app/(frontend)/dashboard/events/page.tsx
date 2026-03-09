@@ -4,6 +4,7 @@ import { CalendarPlus, CalendarX } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
 import { formatDateShort, formatTime } from '@/lib/format'
+import { getThumbUrl } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -20,12 +21,6 @@ function isPast(dateStr: string): boolean {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return new Date(dateStr) < today
-}
-
-function getThumbUrl(image: unknown): string | null {
-  if (!image || typeof image !== 'object') return null
-  const img = image as { url?: string; sizes?: { thumbnail?: { url?: string } } }
-  return img.sizes?.thumbnail?.url || img.url || null
 }
 
 function getRoomName(room: unknown): string | null {

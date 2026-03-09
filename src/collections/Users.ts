@@ -129,7 +129,7 @@ export const Users: CollectionConfig = {
         const user = args?.user
         const req = args?.req
 
-        // Résoudre le slug du tenant pour construire l'URL sur le bon sous-domaine
+        // Résoudre le custom domain de la church pour rediriger l'utilisateur
         let baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
         if (req && user?.tenants?.length) {
           const tenantId = typeof user.tenants[0].tenant === 'object'
@@ -142,8 +142,9 @@ export const Users: CollectionConfig = {
               depth: 0,
               overrideAccess: true,
             }).catch(() => null)
-            if (church?.slug) {
-              baseUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${church.slug}.${process.env.TENANT_DOMAIN}`
+            const customDomain = church?.domain as string | undefined
+            if (customDomain) {
+              baseUrl = `https://${customDomain}`
             }
           }
         }

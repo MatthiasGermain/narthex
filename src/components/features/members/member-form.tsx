@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { Upload, X, Loader2 } from 'lucide-react'
+import { getInitialMedia } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,14 +40,7 @@ interface MemberFormProps {
   userRole: string
 }
 
-function getInitialPhoto(photo: MemberData['photo']): { id: number | null; preview: string | null } {
-  if (!photo) return { id: null, preview: null }
-  if (typeof photo === 'number') return { id: photo, preview: null }
-  return {
-    id: photo.id,
-    preview: photo.sizes?.thumbnail?.url || photo.url || null,
-  }
-}
+const getInitialPhoto = (photo: MemberData['photo']) => getInitialMedia(photo)
 
 function getLinkedUser(user: MemberData['user']): { id: number | null; email: string | null } {
   if (!user) return { id: null, email: null }
@@ -115,7 +109,8 @@ export function MemberForm({ mode, defaultValues, churchId, userRole }: MemberFo
       const data = await res.json()
       setPhotoId(data.doc.id)
       setPhotoPreview(data.doc.sizes?.thumbnail?.url || data.doc.url)
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error("Erreur lors de l'upload de la photo")
     } finally {
       setUploading(false)
@@ -236,7 +231,8 @@ export function MemberForm({ mode, defaultValues, churchId, userRole }: MemberFo
       toast.success(mode === 'create' ? 'Membre ajouté' : 'Membre modifié')
       router.push('/dashboard/members')
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)

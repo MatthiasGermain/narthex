@@ -3,16 +3,11 @@ import Image from 'next/image'
 import { Users, Plus, Mail, Phone, UserCheck } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { getThumbUrl } from '@/lib/image-utils'
 import { CHURCH_ROLE_LABELS } from '@/lib/church-roles'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MemberActions } from '@/components/features/members/member-actions'
-
-function getThumbUrl(photo: unknown): string | null {
-  if (!photo || typeof photo !== 'object') return null
-  const img = photo as { url?: string; sizes?: { thumbnail?: { url?: string } } }
-  return img.sizes?.thumbnail?.url || img.url || null
-}
 
 function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()

@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { DoorOpen, Plus, Users, Accessibility, Wifi, Music, Monitor, UtensilsCrossed, Presentation } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { getThumbUrl } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RoomActions } from '@/components/features/rooms/room-actions'
@@ -14,12 +15,6 @@ const EQUIPMENT_LABELS: Record<string, { label: string; icon: typeof Wifi }> = {
   wifi: { label: 'Wi-Fi', icon: Wifi },
   kitchen: { label: 'Cuisine', icon: UtensilsCrossed },
   board: { label: 'Tableau', icon: Monitor },
-}
-
-function getThumbUrl(image: unknown): string | null {
-  if (!image || typeof image !== 'object') return null
-  const img = image as { url?: string; sizes?: { thumbnail?: { url?: string } } }
-  return img.sizes?.thumbnail?.url || img.url || null
 }
 
 function canUserDelete(

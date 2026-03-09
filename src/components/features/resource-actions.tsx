@@ -61,7 +61,8 @@ export function ResourceActions({
       }
       toast.success(labels.deleteSuccess)
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue')
     } finally {
       setDeleting(false)

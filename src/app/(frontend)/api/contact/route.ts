@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
   let body: { name?: string; email?: string; message?: string }
   try {
     body = await req.json()
-  } catch {
+  } catch (err) {
+    console.error(err)
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
 
@@ -80,7 +81,8 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (err) {
+    console.error(err)
     return NextResponse.json(
       { error: "Erreur lors de l'envoi. Réessayez plus tard." },
       { status: 500 },

@@ -173,14 +173,9 @@ export interface Church {
    */
   slug: string;
   /**
-   * Domaines et sous-domaines autorisés pour ce tenant
+   * Domaine personnalisé pour ce tenant (ex: mon-eglise.fr)
    */
-  domains?:
-    | {
-        domain: string;
-        id?: string | null;
-      }[]
-    | null;
+  domain?: string | null;
   settings?: {
     enabledModules?: 'events'[] | null;
     /**
@@ -636,12 +631,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface ChurchesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  domains?:
-    | T
-    | {
-        domain?: T;
-        id?: T;
-      };
+  domain?: T;
   settings?:
     | T
     | {

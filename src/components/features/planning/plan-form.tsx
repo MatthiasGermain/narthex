@@ -139,7 +139,8 @@ export function PlanForm({ mode, defaultValues, churchId, members, serviceRoles 
       )
       router.push('/dashboard/planning')
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)

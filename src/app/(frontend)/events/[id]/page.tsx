@@ -21,7 +21,8 @@ const getEvent = cache(async (payload: Payload, id: number | string) => {
       depth: 1,
       overrideAccess: true,
     })
-  } catch {
+  } catch (err) {
+    console.error(err)
     return null
   }
 })

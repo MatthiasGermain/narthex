@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { Upload, X, Loader2 } from 'lucide-react'
+import { getInitialMedia } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,14 +39,7 @@ interface RoomFormProps {
   churchId: number
 }
 
-function getInitialImage(image: RoomData['image']): { id: number | null; preview: string | null } {
-  if (!image) return { id: null, preview: null }
-  if (typeof image === 'number') return { id: image, preview: null }
-  return {
-    id: image.id,
-    preview: image.sizes?.thumbnail?.url || image.url || null,
-  }
-}
+const getInitialImage = (image: RoomData['image']) => getInitialMedia(image)
 
 export function RoomForm({ mode, defaultValues, churchId }: RoomFormProps) {
   const router = useRouter()
@@ -99,7 +93,8 @@ export function RoomForm({ mode, defaultValues, churchId }: RoomFormProps) {
       const data = await res.json()
       setImageId(data.doc.id)
       setImagePreview(data.doc.sizes?.thumbnail?.url || data.doc.url)
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error("Erreur lors de l'upload de l'image")
     } finally {
       setUploading(false)
@@ -157,7 +152,8 @@ export function RoomForm({ mode, defaultValues, churchId }: RoomFormProps) {
       )
       router.push('/dashboard/rooms')
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)

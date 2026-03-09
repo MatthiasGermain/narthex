@@ -15,7 +15,8 @@ export function LogoutButton() {
       await fetch('/api/users/logout', { method: 'POST' })
       router.push('/')
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error(err)
       setLoading(false)
     }
   }

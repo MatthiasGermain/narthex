@@ -45,7 +45,8 @@ export async function updateMyProfile(memberId: number, data: {
       overrideAccess: true,
     })
     return { success: true }
-  } catch {
+  } catch (err) {
+    console.error(err)
     return { success: false, error: 'Erreur lors de la mise à jour' }
   }
 }
@@ -58,7 +59,8 @@ export async function requestPasswordReset(email: string) {
       body: JSON.stringify({ email }),
     })
     return { success: res.ok }
-  } catch {
+  } catch (err) {
+    console.error(err)
     return { success: false }
   }
 }

@@ -121,7 +121,8 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
 
       toast.success('Profil enregistré')
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)

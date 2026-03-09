@@ -68,7 +68,8 @@ export function AccountProfileForm({ memberId, defaultValues, churchRoleLabel }:
       const data = await res.json()
       setPhotoId(data.doc.id)
       setPhotoPreview(data.doc.sizes?.thumbnail?.url || data.doc.url)
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error("Erreur lors de l'upload de la photo")
     } finally {
       setUploading(false)
@@ -98,7 +99,8 @@ export function AccountProfileForm({ memberId, defaultValues, churchRoleLabel }:
       } else {
         toast.error(result.error || 'Erreur')
       }
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue')
     } finally {
       setLoading(false)
@@ -115,7 +117,8 @@ export function AccountProfileForm({ memberId, defaultValues, churchRoleLabel }:
       } else {
         toast.error('Erreur lors de l\'envoi')
       }
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Une erreur est survenue')
     } finally {
       setResetLoading(false)

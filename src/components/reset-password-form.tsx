@@ -32,8 +32,9 @@ export function ResetPasswordForm() {
         return
       }
 
-      router.push('/dashboard')
-    } catch {
+      router.push('/login')
+    } catch (err) {
+      console.error(err)
       setError('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)
@@ -62,7 +63,7 @@ export function ResetPasswordForm() {
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="new-password"
-          minLength={6}
+          minLength={8}
         />
       </div>
       {error && (

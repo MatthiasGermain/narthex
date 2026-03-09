@@ -51,20 +51,12 @@ export const Churches: CollectionConfig = {
       },
     },
     {
-      name: 'domains',
-      type: 'array',
-      label: 'Domaines',
+      name: 'domain',
+      type: 'text',
+      label: 'Domaine',
       admin: {
-        description: 'Domaines et sous-domaines autorisés pour ce tenant',
+        description: 'Domaine personnalisé pour ce tenant (ex: mon-eglise.fr)',
       },
-      fields: [
-        {
-          name: 'domain',
-          type: 'text',
-          required: true,
-          label: 'Domaine',
-        },
-      ],
     },
     {
       name: 'settings',

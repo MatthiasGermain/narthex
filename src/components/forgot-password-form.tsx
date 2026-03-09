@@ -29,7 +29,8 @@ export function ForgotPasswordForm() {
       }
 
       setSent(true)
-    } catch {
+    } catch (err) {
+      console.error(err)
       setError('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setLoading(false)
