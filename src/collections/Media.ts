@@ -16,8 +16,19 @@ export const Media: CollectionConfig = {
       required: true,
     },
   ],
+  hooks: {
+    beforeChange: [
+      ({ req, operation }) => {
+        if (operation === 'create' && req.file) {
+          const maxSize = 5 * 1024 * 1024 // 5 MB
+          if (req.file.size > maxSize) {
+            throw new Error('Le fichier dépasse la taille maximale de 5 Mo.')
+          }
+        }
+      },
+    ],
+  },
   upload: {
-    maxFileSize: 5 * 1024 * 1024, // 5 MB
     mimeTypes: ['image/*'],
     imageSizes: [
       {
