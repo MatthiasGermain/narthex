@@ -3,6 +3,7 @@ import { Calendar, DoorOpen, Users } from 'lucide-react'
 import { resolveTenant } from '@/lib/tenant'
 import { formatFrenchDate } from '@/lib/date-utils'
 import { MonthlyTimeline, type TimelineItem } from '@/components/dashboard/monthly-timeline'
+import { ThisSunday } from '@/components/dashboard/this-sunday'
 
 interface Props {
   searchParams: Promise<{ month?: string }>
@@ -81,6 +82,21 @@ export default async function DashboardPage({ searchParams }: Props) {
   })
 
   const todayISO = now.toISOString().split('T')[0]
+
+  // Prochain culte (widget Ce dimanche)
+  const nextPlanPromise = payload.find({
+    collection: 'service-plans',
+    where: {
+      church: { equals: tenant.id },
+      date: { greater_than_equal: `${todayISO}T00:00:00.000Z` },
+    },
+    sort: 'date',
+    limit: 1,
+    depth: 2,
+    overrideAccess: false,
+    user,
+  })
+
   const statsPromises = isAdmin
     ? [
         payload.find({
@@ -101,23 +117,35 @@ export default async function DashboardPage({ searchParams }: Props) {
       ]
     : []
 
-  const [plansResult, eventsResult, ...statsResults] = await Promise.all([
+  const [plansResult, eventsResult, nextPlanResult, ...statsResults] = await Promise.all([
     plansPromise,
     eventsPromise,
+    nextPlanPromise,
     ...statsPromises,
   ])
+
+  type MemberRef = { id: number; firstName: string; lastName: string }
+  const nextPlan = nextPlanResult.docs[0] ?? null
+  const nextPlanData = nextPlan
+    ? {
+        id: nextPlan.id,
+        date: nextPlan.date,
+        notes: (nextPlan.notes as string | null | undefined) ?? null,
+        assignments: (
+          nextPlan.assignments as Array<{ role: string; members: MemberRef[] | number[] | null }> ?? []
+        ),
+      }
+    : null
 
   const totalEvents = statsResults[0]?.totalDocs ?? 0
   const totalRooms = statsResults[1]?.totalDocs ?? 0
   const totalMembers = statsResults[2]?.totalDocs ?? 0
 
   // Construire les items
-  type MemberDoc = { id: number; firstName: string; lastName: string }
-
   const planItems: TimelineItem[] = plansResult.docs.map((plan) => {
     const d = new Date(plan.date)
     const dateISO = d.toISOString().split('T')[0]
-    const assignments = plan.assignments as Array<{ role: string; members: MemberDoc[] | null }> | undefined
+    const assignments = plan.assignments as Array<{ role: string; members: MemberRef[] | null }> | undefined
     const totalRoles = assignments?.length ?? 0
     const filledRoles = assignments?.filter((a) => a.members && a.members.length > 0).length ?? 0
 
@@ -163,10 +191,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Tableau de bord</h1>
-        <p className="text-sm text-muted-foreground mt-1">Bienvenue, {user.email}</p>
-      </div>
+      <ThisSunday plan={nextPlanData} isAdmin={isAdmin} />
 
       <MonthlyTimeline
         items={items}

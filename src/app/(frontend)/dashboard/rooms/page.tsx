@@ -88,7 +88,7 @@ export default async function RoomsPage() {
                 {active.map((room) => (
                   <div
                     key={room.id}
-                    className="rounded-lg border overflow-hidden hover:shadow-md transition-shadow"
+                    className="rounded-lg border border-raisin/8 bg-raisin/5 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {getThumbUrl(room.image) ? (
                       <Image
@@ -151,7 +151,7 @@ export default async function RoomsPage() {
                 {inactive.map((room) => (
                   <div
                     key={room.id}
-                    className="rounded-lg border overflow-hidden opacity-60"
+                    className="rounded-lg border border-raisin/8 bg-raisin/5 overflow-hidden opacity-60"
                   >
                     <div className="w-full h-24 bg-muted flex items-center justify-center">
                       <DoorOpen className="h-8 w-8 text-muted-foreground/30" />

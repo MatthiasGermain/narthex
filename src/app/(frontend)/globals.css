@@ -4,6 +4,27 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── StaggeredMenu counter numbering ── */
+.sm-panel-list[data-numbering] {
+  counter-reset: smItem;
+}
+.sm-panel-list[data-numbering] .sm-panel-item::after {
+  counter-increment: smItem;
+  content: counter(smItem, decimal-leading-zero);
+  position: relative;
+  font-size: 12px;
+  font-weight: 400;
+  color: #c9a0dc;
+  letter-spacing: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: var(--sm-num-opacity, 0);
+  margin-left: 0.5em;
+  vertical-align: super;
+}
+.sm-socials-list:hover .sm-socials-link:not(:hover) { opacity: 0.35; }
+.sm-socials-list .sm-socials-link:hover { opacity: 1; }
+
 @keyframes background-pan {
   from { background-position: 0% center; }
   to { background-position: -200% center; }

@@ -105,7 +105,7 @@ export default async function EventsPage() {
                 {upcoming.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-4"
+                    className="flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4"
                   >
                     {getThumbUrl(event.image) && (
                       <Image
@@ -147,7 +147,7 @@ export default async function EventsPage() {
                 {past.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-4 opacity-60"
+                    className="flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4 opacity-60"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{event.title}</p>
@@ -174,10 +174,10 @@ export default async function EventsPage() {
             {upcoming.length > 0 && (
               <div>
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">À venir</h2>
-                <div className="rounded-lg border overflow-hidden">
+                <div className="rounded-lg border border-raisin/8 overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
+                      <TableRow className="bg-raisin/8">
                         <TableHead className="w-10"></TableHead>
                         <TableHead className="w-[28%]">Titre</TableHead>
                         <TableHead className="w-[23%]">Date</TableHead>
@@ -189,7 +189,7 @@ export default async function EventsPage() {
                     </TableHeader>
                     <TableBody>
                       {upcoming.map((event) => (
-                        <TableRow key={event.id} className="hover:bg-muted/30">
+                        <TableRow key={event.id} className="hover:bg-raisin/5">
                           <TableCell>
                             {getThumbUrl(event.image) ? (
                               <Image
@@ -230,10 +230,10 @@ export default async function EventsPage() {
             {past.length > 0 && (
               <div>
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Passés</h2>
-                <div className="rounded-lg border overflow-hidden opacity-60">
+                <div className="rounded-lg border border-raisin/8 overflow-hidden opacity-60">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
+                      <TableRow className="bg-raisin/8">
                         <TableHead className="w-10"></TableHead>
                         <TableHead className="w-[28%]">Titre</TableHead>
                         <TableHead className="w-[23%]">Date</TableHead>
@@ -245,7 +245,7 @@ export default async function EventsPage() {
                     </TableHeader>
                     <TableBody>
                       {past.map((event) => (
-                        <TableRow key={event.id} className="hover:bg-muted/30">
+                        <TableRow key={event.id} className="hover:bg-raisin/5">
                           <TableCell>
                             {getThumbUrl(event.image) ? (
                               <Image

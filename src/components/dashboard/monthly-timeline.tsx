@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Sun, Calendar, MapPin, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -64,27 +63,25 @@ export function MonthlyTimeline({
 
       {/* Contenu */}
       {items.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-            <ClipboardList className="h-8 w-8 text-muted-foreground/40 mb-2" />
-            <p className="font-medium text-sm">Rien de prévu</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {isAdmin
-                ? 'Créez un culte ou un événement pour commencer.'
-                : 'Aucun culte ou événement n\u2019est planifié ce mois.'}
-            </p>
-            {isAdmin && (
-              <div className="flex gap-2 mt-3">
-                <Button variant="outline" size="sm" className="text-xs" asChild>
-                  <Link href="/dashboard/planning/new">Nouveau culte</Link>
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs" asChild>
-                  <Link href="/dashboard/events/new">Nouvel événement</Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-raisin/8 border-dashed bg-raisin/5 flex flex-col items-center justify-center py-10 text-center">
+          <ClipboardList className="h-8 w-8 text-muted-foreground/40 mb-2" />
+          <p className="font-medium text-sm">Rien de prévu</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {isAdmin
+              ? 'Créez un culte ou un événement pour commencer.'
+              : 'Aucun culte ou événement n\u2019est planifié ce mois.'}
+          </p>
+          {isAdmin && (
+            <div className="flex gap-2 mt-3">
+              <Button variant="outline" size="sm" className="text-xs" asChild>
+                <Link href="/dashboard/planning/new">Nouveau culte</Link>
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs" asChild>
+                <Link href="/dashboard/events/new">Nouvel événement</Link>
+              </Button>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
           {groupByDate(items).map(([, dayItems]) => {
@@ -101,12 +98,12 @@ export function MonthlyTimeline({
                 </div>
 
                 {/* Colonne contenu */}
-                <div className="flex-1 min-w-0 rounded-lg border divide-y overflow-hidden">
+                <div className="flex-1 min-w-0 rounded-lg border border-raisin/8 bg-raisin/5 divide-y divide-raisin/8 overflow-hidden">
                   {dayItems.map((item) => (
                     <Link
                       key={`${item.type}-${item.id}`}
                       href={item.href}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-raisin/5 transition-colors"
                     >
                       {/* Pastille type */}
                       <div

@@ -83,7 +83,7 @@ export default async function MembersPage() {
                   return (
                     <div
                       key={member.id}
-                      className="rounded-lg border overflow-hidden hover:shadow-md transition-shadow"
+                      className="rounded-lg border border-raisin/8 bg-raisin/5 overflow-hidden hover:shadow-md transition-shadow"
                     >
                       <div className="p-4">
                         <div className="flex items-start gap-3">
@@ -158,7 +158,7 @@ export default async function MembersPage() {
                 {inactive.map((member) => (
                   <div
                     key={member.id}
-                    className="rounded-lg border overflow-hidden opacity-60"
+                    className="rounded-lg border border-raisin/8 bg-raisin/5 overflow-hidden opacity-60"
                   >
                     <div className="p-4">
                       <div className="flex items-start gap-3">

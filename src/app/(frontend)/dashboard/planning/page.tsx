@@ -95,7 +95,7 @@ export default async function PlanningPage() {
                 {upcoming.map((plan) => (
                   <div
                     key={plan.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-4"
+                    className="flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{formatDate(plan.date)}</p>
@@ -128,7 +128,7 @@ export default async function PlanningPage() {
                 {past.map((plan) => (
                   <div
                     key={plan.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-4 opacity-60"
+                    className="flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4 opacity-60"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{formatDate(plan.date)}</p>
@@ -161,10 +161,10 @@ export default async function PlanningPage() {
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
                   À venir
                 </h2>
-                <div className="rounded-lg border overflow-hidden">
+                <div className="rounded-lg border border-raisin/8 overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
+                      <TableRow className="bg-raisin/8">
                         <TableHead className="w-[35%]">Date</TableHead>
                         <TableHead className="w-[45%]">Affectations</TableHead>
                         <TableHead className="w-10"></TableHead>
@@ -172,7 +172,7 @@ export default async function PlanningPage() {
                     </TableHeader>
                     <TableBody>
                       {upcoming.map((plan) => (
-                        <TableRow key={plan.id} className="hover:bg-muted/30">
+                        <TableRow key={plan.id} className="hover:bg-raisin/5">
                           <TableCell className="font-medium">{formatDate(plan.date)}</TableCell>
                           <TableCell className="text-muted-foreground">
                             {summarizeAssignments(
@@ -204,10 +204,10 @@ export default async function PlanningPage() {
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
                   Passés
                 </h2>
-                <div className="rounded-lg border overflow-hidden opacity-60">
+                <div className="rounded-lg border border-raisin/8 overflow-hidden opacity-60">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
+                      <TableRow className="bg-raisin/8">
                         <TableHead className="w-[35%]">Date</TableHead>
                         <TableHead className="w-[45%]">Affectations</TableHead>
                         <TableHead className="w-10"></TableHead>
@@ -215,7 +215,7 @@ export default async function PlanningPage() {
                     </TableHeader>
                     <TableBody>
                       {past.map((plan) => (
-                        <TableRow key={plan.id} className="hover:bg-muted/30">
+                        <TableRow key={plan.id} className="hover:bg-raisin/5">
                           <TableCell className="font-medium">{formatDate(plan.date)}</TableCell>
                           <TableCell className="text-muted-foreground">
                             {summarizeAssignments(
