@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
 export function ResetPasswordForm() {
   const router = useRouter()
@@ -44,33 +43,36 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="flex flex-col gap-4 text-center">
-        <p className="text-sm text-destructive">Lien de réinitialisation invalide.</p>
-        <a href="/login" className="text-sm text-muted-foreground hover:underline">
+        <p className="text-sm text-red-600">Lien de réinitialisation invalide.</p>
+        <Link href="/login" className="text-sm text-raisin/50 hover:text-raisin transition-colors">
           Retour à la connexion
-        </a>
+        </Link>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Nouveau mot de passe</Label>
-        <Input
-          id="password"
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <div>
+        <label htmlFor="reset-password" className="block text-sm font-medium text-raisin mb-1.5">
+          Nouveau mot de passe
+        </label>
+        <input
+          id="reset-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="new-password"
           minLength={8}
+          className="w-full rounded-md border border-isabelline bg-cream px-4 py-2.5 text-sm text-raisin placeholder:text-raisin/50 outline-none focus:ring-2 focus:ring-indigo/50 transition-shadow"
         />
       </div>
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-red-600">{error}</p>
       )}
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? 'Réinitialisation...' : 'Réinitialiser le mot de passe'}
+      <Button type="submit" disabled={loading} variant="sunglow" size="lg" className="w-full">
+        {loading ? 'Réinitialisation…' : 'Réinitialiser le mot de passe'}
       </Button>
     </form>
   )

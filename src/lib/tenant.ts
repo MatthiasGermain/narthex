@@ -83,5 +83,10 @@ export const resolveTenant = cache(async () => {
       ])
     : [null, null]
 
-  return { headers, payload, user, tenantSlug, tenant, branding, profile }
+  const logoUrl =
+    typeof branding?.logo === 'object' && branding.logo?.url
+      ? branding.logo.url
+      : null
+
+  return { headers, payload, user, tenantSlug, tenant, branding, profile, logoUrl }
 })

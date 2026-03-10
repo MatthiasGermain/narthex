@@ -2,14 +2,18 @@ import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, MapPin, Clock } from 'lucide-react'
+import { ArrowLeft, MapPin, Clock, Calendar } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Payload } from 'payload'
 
 import { resolveTenant } from '@/lib/tenant'
 import { formatDate, formatTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
+import { PublicFooter } from '@/components/layout/public-footer'
 import { TenantTheme } from '@/components/tenant-theme'
+import { ScrollReveal } from '@/components/landing/scroll-reveal'
+import { Button } from '@/components/ui/button'
+import { getEventThumb, getEventAlt } from '@/components/public/event-card'
 
 export const revalidate = 60
 
@@ -38,11 +42,7 @@ export async function generateMetadata({
   const event = await getEvent(payload, id)
   if (!event) return {}
   const description = `${event.title} — ${formatDate(event.date)} à ${formatTime(event.time)}${event.location ? ` — ${event.location}` : ''}`
-  const ogImage = typeof event.image === 'object' && event.image?.sizes?.card?.url
-    ? event.image.sizes.card.url
-    : typeof event.image === 'object' && event.image?.url
-      ? event.image.url
-      : undefined
+  const ogImage = getEventThumb(event.image) || undefined
   return {
     title: `${event.title} | ${tenant.name}`,
     description,
@@ -60,7 +60,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { payload, user, tenant, branding } = await resolveTenant()
+  const { payload, user, tenant, branding, profile, logoUrl } = await resolveTenant()
 
   if (!tenant) notFound()
 
@@ -74,61 +74,82 @@ export default async function EventDetailPage({
   // Event interne → 404 si pas connecté
   if (event.visibility === 'internal' && !user) notFound()
 
-  const logoUrl = typeof branding?.logo === 'object' && branding.logo?.url ? branding.logo.url : null
+  const heroImage = getEventThumb(event.image)
+  const heroAlt = getEventAlt(event.image, event.title)
 
   return (
     <div className="min-h-screen flex flex-col">
       <TenantTheme colors={branding?.colors || {}} />
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
-      <div className="flex-1 px-4 py-8 sm:py-12">
-        <div className="mx-auto max-w-2xl">
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour aux événements
-          </Link>
-
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold">{event.title}</h1>
-
-          <div className="mt-4 flex flex-col gap-2 text-muted-foreground">
-            <p className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span className="capitalize">{formatDate(event.date)}</span> à {formatTime(event.time)}
-            </p>
-            {event.location && (
-              <p className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {event.location}
-              </p>
-            )}
+      {/* ── Image hero ── */}
+      <div className="pt-20 sm:pt-24">
+        {heroImage ? (
+          <div className="w-full max-h-96 overflow-hidden">
+            <Image
+              src={heroImage}
+              alt={heroAlt}
+              width={1920}
+              height={600}
+              className="w-full h-64 sm:h-80 md:h-96 object-cover"
+            />
           </div>
-
-          {event.image && typeof event.image === 'object' && event.image.url && (
-            <div className="mt-6 rounded-lg overflow-hidden">
-              <Image
-                src={event.image.sizes?.card?.url || event.image.url}
-                alt={event.image.alt || event.title}
-                width={768}
-                height={512}
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          )}
-
-          {event.description && (
-            <div className="mt-8 prose prose-sm max-w-none whitespace-pre-wrap">
-              {event.description}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="w-full h-48 sm:h-64 bg-linear-to-br from-raisin/80 to-violet/60 flex items-center justify-center">
+            <Calendar className="h-16 w-16 text-cream/30" />
+          </div>
+        )}
       </div>
 
-      <footer className="border-t px-4 py-6 text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} {tenant.name}
-      </footer>
+      {/* ── Contenu ── */}
+      <section className="bg-cream flex-1 px-4 py-10 sm:py-14">
+        <div className="mx-auto max-w-3xl">
+          <ScrollReveal>
+            <Button asChild variant="raisin" size="sm" className="mb-6">
+              <Link href="/events">
+                <ArrowLeft className="h-4 w-4" />
+                Tous les événements
+              </Link>
+            </Button>
+          </ScrollReveal>
+
+          <ScrollReveal>
+            <h1 className="font-heading font-black text-3xl sm:text-4xl uppercase tracking-wide leading-snug text-raisin">
+              {event.title}
+            </h1>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.1}>
+            <div className="mt-5 flex flex-wrap gap-4">
+              <span className="inline-flex items-center gap-2 rounded-full bg-sunglow/15 px-4 py-1.5 text-sm font-medium text-raisin">
+                <Clock className="h-4 w-4 text-sunglow" />
+                <span className="capitalize">{formatDate(event.date)}</span> à {formatTime(event.time)}
+              </span>
+              {event.location && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-violet/15 px-4 py-1.5 text-sm font-medium text-raisin">
+                  <MapPin className="h-4 w-4 text-violet" />
+                  {event.location}
+                </span>
+              )}
+            </div>
+          </ScrollReveal>
+
+          {event.description && (
+            <ScrollReveal delay={0.2}>
+              <div className="mt-8 text-raisin/70 leading-relaxed whitespace-pre-wrap">
+                {event.description}
+              </div>
+            </ScrollReveal>
+          )}
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <PublicFooter
+        churchName={tenant.name}
+        logoUrl={logoUrl}
+        social={profile?.social}
+      />
     </div>
   )
 }

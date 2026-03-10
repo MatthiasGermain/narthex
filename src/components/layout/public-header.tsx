@@ -11,6 +11,7 @@ const navItems: StaggeredMenuItem[] = [
   { href: '/', label: 'Accueil', exact: true },
   { href: '/events', label: 'Événements' },
   { href: '/about', label: 'À propos' },
+  { href: '/contact', label: 'Contact' },
 ]
 
 interface PublicHeaderProps {
@@ -43,7 +44,7 @@ export function PublicHeader({ churchName, logoUrl, isLoggedIn }: PublicHeaderPr
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'py-2 mx-4 mt-3 rounded-full bg-cream/80 backdrop-blur-xl border border-raisin/8 shadow-sm'
+          ? 'py-4 bg-cream/80 backdrop-blur-xl shadow-[0_2px_20px_rgba(30,41,82,0.08)]'
           : 'py-4 bg-transparent'
       }`}
     >
@@ -54,24 +55,22 @@ export function PublicHeader({ churchName, logoUrl, isLoggedIn }: PublicHeaderPr
             <Image
               src={logoUrl}
               alt={churchName}
-              width={scrolled ? 24 : 28}
-              height={scrolled ? 24 : 28}
-              className={`rounded object-contain transition-all duration-300 ${scrolled ? 'h-6 w-6' : 'h-7 w-7'}`}
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded object-contain"
             />
           ) : (
             <Image
               src="/brand/pictogramme_noir_sans_fond.svg"
               alt="Narthex"
-              width={scrolled ? 22 : 28}
-              height={scrolled ? 22 : 28}
-              className={`transition-all duration-300 ${scrolled ? 'h-5.5 w-5.5' : 'h-7 w-7'}`}
+              width={28}
+              height={28}
+              className="h-7 w-7"
             />
           )}
-          {!scrolled && (
-            <span className="font-heading font-bold text-sm text-raisin truncate max-w-50">
-              {churchName}
-            </span>
-          )}
+          <span className="font-heading font-bold text-sm text-raisin truncate max-w-50">
+            {churchName}
+          </span>
         </Link>
 
         {/* Desktop nav */}

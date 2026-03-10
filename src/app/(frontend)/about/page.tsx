@@ -1,17 +1,20 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Clock, MapPin, Mail, Phone, Globe, Facebook, Instagram, Youtube } from 'lucide-react'
+import { Clock, Globe, Facebook, Instagram, Youtube } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
 import { DAY_LABELS, formatServiceTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
+import { PublicFooter } from '@/components/layout/public-footer'
+import { PublicPageHero } from '@/components/layout/public-page-hero'
 import { TenantTheme } from '@/components/tenant-theme'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollReveal } from '@/components/landing/scroll-reveal'
+import { AnimatedUnderline } from '@/components/landing/animated-underline'
 import { Button } from '@/components/ui/button'
+import { ContactInfoItems } from '@/components/public/contact-info-items'
 
 export const revalidate = 60
-
 
 export async function generateMetadata(): Promise<Metadata> {
   const { tenant, profile } = await resolveTenant()
@@ -30,11 +33,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage() {
-  const { user, tenant, branding, profile } = await resolveTenant()
+  const { user, tenant, branding, profile, logoUrl } = await resolveTenant()
 
   if (!tenant) notFound()
-
-  const logoUrl = typeof branding?.logo === 'object' && branding.logo?.url ? branding.logo.url : null
 
   const hasAddress = profile?.address?.street || profile?.address?.city
   const hasContact = profile?.contact?.email || profile?.contact?.phone || profile?.contact?.website
@@ -46,155 +47,161 @@ export default async function AboutPage() {
       <TenantTheme colors={branding?.colors || {}} />
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
-      <div className="flex-1 px-4 py-8 sm:py-12">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-8">À propos</h1>
+      {/* ── Hero ── */}
+      <PublicPageHero
+        title="À propos"
+        subtitle="Apprenez à nous connaître"
+        className="bg-cream"
+      />
 
-          {/* Description */}
-          {profile?.description && (
-            <section className="mb-10">
-              <h2 className="text-lg font-heading font-bold mb-3">Qui sommes-nous ?</h2>
-              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+      {/* ── Qui sommes-nous ── */}
+      {profile?.description && (
+        <section className="bg-cream/50 px-4 py-14">
+          <div className="mx-auto max-w-3xl">
+            <ScrollReveal>
+              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-raisin mb-6 text-center">
+                Qui sommes-<AnimatedUnderline>nous</AnimatedUnderline> ?
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <p className="text-raisin/70 leading-relaxed whitespace-pre-wrap text-center">
                 {profile.description}
               </p>
-            </section>
-          )}
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Horaires des cultes */}
-            {hasServices && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Horaires des cultes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {profile!.services!.map((service) => (
-                    <div key={service.id || service.label} className="flex justify-between text-sm">
-                      <span>
-                        <span className="font-medium">{service.label}</span>
-                        <span className="text-muted-foreground ml-1">— {DAY_LABELS[service.day] || service.day}</span>
-                      </span>
-                      <span className="text-muted-foreground">{formatServiceTime(service.time)}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Adresse */}
-            {hasAddress && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Adresse
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-1">
-                  {profile!.address!.street && <p>{profile!.address!.street}</p>}
-                  {(profile!.address!.postalCode || profile!.address!.city) && (
-                    <p>
-                      {profile!.address!.postalCode} {profile!.address!.city}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Contact */}
-            {hasContact && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {profile!.contact!.email && (
-                    <Link
-                      href={`mailto:${profile!.contact!.email}`}
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {profile!.contact!.email}
-                    </Link>
-                  )}
-                  {profile!.contact!.phone && (
-                    <Link
-                      href={`tel:${profile!.contact!.phone.replace(/\s/g, '')}`}
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Phone className="h-4 w-4" />
-                      {profile!.contact!.phone}
-                    </Link>
-                  )}
-                  {profile!.contact!.website && (
-                    <Link
-                      href={profile!.contact!.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Globe className="h-4 w-4" />
-                      Site web
-                    </Link>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Réseaux sociaux */}
-            {hasSocial && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Réseaux sociaux</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                  {profile!.social!.facebook && (
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={profile!.social!.facebook} target="_blank" rel="noopener noreferrer">
-                        <Facebook className="h-4 w-4 mr-2" />
-                        Facebook
-                      </Link>
-                    </Button>
-                  )}
-                  {profile!.social!.instagram && (
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={profile!.social!.instagram} target="_blank" rel="noopener noreferrer">
-                        <Instagram className="h-4 w-4 mr-2" />
-                        Instagram
-                      </Link>
-                    </Button>
-                  )}
-                  {profile!.social!.youtube && (
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={profile!.social!.youtube} target="_blank" rel="noopener noreferrer">
-                        <Youtube className="h-4 w-4 mr-2" />
-                        YouTube
-                      </Link>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            </ScrollReveal>
           </div>
+        </section>
+      )}
 
-          {/* Fallback si aucun profil */}
-          {!profile?.description && !hasServices && !hasAddress && !hasContact && !hasSocial && (
-            <p className="text-muted-foreground text-center py-16">
-              Les informations de cette église seront bientôt disponibles.
-            </p>
-          )}
-        </div>
-      </div>
+      {/* ── Nos cultes ── */}
+      {hasServices && (
+        <section className="bg-raisin px-4 py-14">
+          <div className="mx-auto max-w-3xl">
+            <ScrollReveal>
+              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-cream mb-8 text-center">
+                Nos cultes
+              </h2>
+            </ScrollReveal>
+            <div className="grid gap-4 sm:grid-cols-2 max-w-2xl mx-auto">
+              {profile!.services!.map((service, i) => (
+                <ScrollReveal key={service.id || service.label} delay={i * 0.1}>
+                  <div className="rounded-xl bg-cream/10 border border-cream/10 p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-4 w-4 text-sunglow" />
+                      <span className="font-heading font-bold text-sm uppercase tracking-wide text-sunglow">
+                        {DAY_LABELS[service.day] || service.day}
+                      </span>
+                    </div>
+                    <p className="text-cream font-medium">{service.label}</p>
+                    <p className="text-cream/60 text-sm mt-0.5">{formatServiceTime(service.time)}</p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-      <footer className="border-t px-4 py-6 text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} {tenant.name}
-      </footer>
+      {/* ── Nous trouver + Nous contacter ── */}
+      {(hasAddress || hasContact) && (
+        <section className="bg-violet/10 px-4 py-14">
+          <div className="mx-auto max-w-3xl">
+            <ScrollReveal>
+              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-raisin mb-8 text-center">
+                Nous trouver
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-2xl mx-auto">
+                <ContactInfoItems address={profile?.address} contact={profile?.contact} />
+                {profile?.contact?.website && (
+                  <div className="flex items-start gap-3">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-sunglow/15 shrink-0">
+                      <Globe className="h-5 w-5 text-sunglow" />
+                    </div>
+                    <div className="text-sm">
+                      <p className="font-heading font-bold text-raisin">Site web</p>
+                      <Link
+                        href={profile.contact.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-raisin/60 hover:text-raisin transition-colors"
+                      >
+                        Site web
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={0.2}>
+              <div className="mt-8 text-center">
+                <Button asChild variant="sunglow" size="default">
+                  <Link href="/contact">
+                    Nous écrire
+                  </Link>
+                </Button>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
+      {/* ── Réseaux sociaux ── */}
+      {hasSocial && (
+        <section className="bg-cream px-4 py-14">
+          <div className="mx-auto max-w-3xl text-center">
+            <ScrollReveal>
+              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-raisin mb-8">
+                Suivez-nous
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <div className="flex flex-wrap justify-center gap-4">
+                {profile!.social!.facebook && (
+                  <Button asChild variant="raisin" size="default">
+                    <Link href={profile!.social!.facebook} target="_blank" rel="noopener noreferrer">
+                      <Facebook className="h-4 w-4" />
+                      Facebook
+                    </Link>
+                  </Button>
+                )}
+                {profile!.social!.instagram && (
+                  <Button asChild variant="violet" size="default">
+                    <Link href={profile!.social!.instagram} target="_blank" rel="noopener noreferrer">
+                      <Instagram className="h-4 w-4" />
+                      Instagram
+                    </Link>
+                  </Button>
+                )}
+                {profile!.social!.youtube && (
+                  <Button asChild variant="sunglow" size="default">
+                    <Link href={profile!.social!.youtube} target="_blank" rel="noopener noreferrer">
+                      <Youtube className="h-4 w-4" />
+                      YouTube
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
+      {/* ── Fallback ── */}
+      {!profile?.description && !hasServices && !hasAddress && !hasContact && !hasSocial && (
+        <section className="bg-cream flex-1 px-4 py-14">
+          <p className="text-raisin/50 text-center">
+            Les informations de cette église seront bientôt disponibles.
+          </p>
+        </section>
+      )}
+
+      {/* ── Footer ── */}
+      <PublicFooter
+        churchName={tenant.name}
+        logoUrl={logoUrl}
+        social={profile?.social}
+      />
     </div>
   )
 }

@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { checkUserTenantAccess } from '@/lib/tenant-check'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
 export function LoginForm({ redirectTo, tenantId }: { redirectTo?: string; tenantId: number }) {
   const router = useRouter()
@@ -31,7 +30,6 @@ export function LoginForm({ redirectTo, tenantId }: { redirectTo?: string; tenan
         return
       }
 
-      // Vérifier que l'user appartient à ce tenant
       const data = await res.json()
       const user = data.user
       if (!checkUserTenantAccess(user, tenantId)) {
@@ -52,42 +50,48 @@ export function LoginForm({ redirectTo, tenantId }: { redirectTo?: string; tenan
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <div>
+        <label htmlFor="login-email" className="block text-sm font-medium text-raisin mb-1.5">
+          Email
+        </label>
+        <input
+          id="login-email"
           type="email"
           placeholder="votre@email.fr"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
+          className="w-full rounded-md border border-isabelline bg-cream px-4 py-2.5 text-sm text-raisin placeholder:text-raisin/50 outline-none focus:ring-2 focus:ring-indigo/50 transition-shadow"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Mot de passe</Label>
-        <Input
-          id="password"
+      <div>
+        <label htmlFor="login-password" className="block text-sm font-medium text-raisin mb-1.5">
+          Mot de passe
+        </label>
+        <input
+          id="login-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
+          className="w-full rounded-md border border-isabelline bg-cream px-4 py-2.5 text-sm text-raisin placeholder:text-raisin/50 outline-none focus:ring-2 focus:ring-indigo/50 transition-shadow"
         />
       </div>
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-red-600">{error}</p>
       )}
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? 'Connexion...' : 'Se connecter'}
+      <Button type="submit" disabled={loading} variant="sunglow" size="lg" className="w-full">
+        {loading ? 'Connexion…' : 'Se connecter'}
       </Button>
-      <a
+      <Link
         href="/login/forgot-password"
-        className="text-sm text-muted-foreground hover:underline text-center"
+        className="text-sm text-raisin/50 hover:text-raisin transition-colors text-center"
       >
         Mot de passe oublié ?
-      </a>
+      </Link>
     </form>
   )
 }

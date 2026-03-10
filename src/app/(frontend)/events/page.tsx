@@ -1,14 +1,16 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
 import { CalendarX } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
-import { formatDate, formatTime } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
+import { PublicFooter } from '@/components/layout/public-footer'
+import { PublicPageHero } from '@/components/layout/public-page-hero'
 import { TenantTheme } from '@/components/tenant-theme'
-import { Card, CardContent } from '@/components/ui/card'
+import { ScrollReveal } from '@/components/landing/scroll-reveal'
+import { EventCard } from '@/components/public/event-card'
+import Link from 'next/link'
 
 export const revalidate = 60
 
@@ -26,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PublicEventsPage() {
-  const { payload, user, tenant, branding } = await resolveTenant()
+  const { payload, user, tenant, branding, profile, logoUrl } = await resolveTenant()
 
   if (!tenant) notFound()
 
@@ -46,89 +48,79 @@ export default async function PublicEventsPage() {
   const upcoming = events.filter((e) => e.date >= now)
   const past = events.filter((e) => e.date < now).reverse()
 
-  const logoUrl = typeof branding?.logo === 'object' && branding.logo?.url ? branding.logo.url : null
-
   return (
     <div className="min-h-screen flex flex-col">
       <TenantTheme colors={branding?.colors || {}} />
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
-      <div className="flex-1 px-4 py-8 sm:py-12">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-8">Événements</h1>
+      {/* ── Hero ── */}
+      <PublicPageHero
+        title="Événements"
+        highlight="Événements"
+        subtitle="Découvrez nos prochaines activités et rejoignez-nous."
+        className="bg-cream"
+      />
 
-          {/* Upcoming */}
+      {/* ── Événements à venir ── */}
+      <section className="bg-cream/50 px-4 py-14">
+        <div className="mx-auto max-w-5xl">
+          <ScrollReveal>
+            <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-raisin mb-8 text-center">
+              À venir
+            </h2>
+          </ScrollReveal>
           {upcoming.length > 0 ? (
-            <div className="grid gap-4">
-              {upcoming.map((event) => {
-                const thumb = typeof event.image === 'object' && event.image?.sizes?.thumbnail?.url
-                  ? event.image.sizes.thumbnail.url
-                  : typeof event.image === 'object' && event.image?.url
-                    ? event.image.url
-                    : null
-                return (
-                  <Link key={event.id} href={`/events/${event.id}`}>
-                    <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer overflow-hidden">
-                      {thumb && (
-                        <Image
-                          src={thumb}
-                          alt={typeof event.image === 'object' && event.image?.alt ? event.image.alt : event.title}
-                          width={400}
-                          height={300}
-                          className="w-full h-40 object-cover"
-                        />
-                      )}
-                      <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <div>
-                          <p className="font-heading font-bold">{event.title}</p>
-                          {event.location && (
-                            <p className="text-sm text-muted-foreground">{event.location}</p>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatDate(event.date)} à {formatTime(event.time)}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {upcoming.map((event, i) => (
+                <ScrollReveal key={event.id} delay={i * 0.1}>
+                  <EventCard event={event} aspect="aspect-video" />
+                </ScrollReveal>
+              ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <CalendarX className="h-12 w-12 mb-4 opacity-40" />
-              <p>Aucun événement à venir pour le moment.</p>
-            </div>
-          )}
-
-          {/* Past */}
-          {past.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-lg font-heading font-bold mb-4 text-muted-foreground">
-                Événements passés
-              </h2>
-              <div className="grid gap-3 opacity-60">
-                {past.map((event) => (
-                  <Link key={event.id} href={`/events/${event.id}`}>
-                    <Card className="hover:shadow-sm transition-all cursor-pointer">
-                      <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                        <p className="font-medium text-sm">{event.title}</p>
-                        <p className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(event.date)}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
+            <ScrollReveal>
+              <div className="flex flex-col items-center justify-center py-16">
+                <CalendarX className="h-12 w-12 mb-4 text-raisin/20" />
+                <p className="text-raisin/50">Aucun événement à venir pour le moment.</p>
               </div>
-            </div>
+            </ScrollReveal>
           )}
         </div>
-      </div>
+      </section>
 
-      <footer className="border-t px-4 py-6 text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} {tenant.name}
-      </footer>
+      {/* ── Événements passés ── */}
+      {past.length > 0 && (
+        <section className="bg-violet/10 px-4 py-14">
+          <div className="mx-auto max-w-5xl">
+            <ScrollReveal>
+              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-raisin/60 mb-8 text-center">
+                Événements passés
+              </h2>
+            </ScrollReveal>
+            <div className="grid gap-3 max-w-3xl mx-auto">
+              {past.map((event, i) => (
+                <ScrollReveal key={event.id} delay={i * 0.05}>
+                  <Link href={`/events/${event.id}`} className="group block">
+                    <div className="rounded-lg bg-cream/60 border border-raisin/6 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 transition-all duration-200 group-hover:bg-cream/80 group-hover:shadow-sm">
+                      <p className="font-heading font-medium text-sm text-raisin/70">{event.title}</p>
+                      <p className="text-xs text-raisin/40 whitespace-nowrap">
+                        {formatDate(event.date)}
+                      </p>
+                    </div>
+                  </Link>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Footer ── */}
+      <PublicFooter
+        churchName={tenant.name}
+        logoUrl={logoUrl}
+        social={profile?.social}
+      />
     </div>
   )
 }
