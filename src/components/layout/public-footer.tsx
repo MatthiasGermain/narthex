@@ -14,6 +14,7 @@ interface PublicFooterProps {
 
 const footerNav = [
   { href: '/events', label: 'Événements' },
+  { href: '/visit', label: 'Première visite' },
   { href: '/about', label: 'À propos' },
   { href: '/contact', label: 'Contact' },
 ]

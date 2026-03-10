@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Clock, Globe, Facebook, Instagram, Youtube } from 'lucide-react'
+import { Globe, Facebook, Instagram, Youtube } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
@@ -39,8 +39,11 @@ export default async function AboutPage() {
 
   const hasAddress = profile?.address?.street || profile?.address?.city
   const hasContact = profile?.contact?.email || profile?.contact?.phone || profile?.contact?.website
-  const hasSocial = profile?.social?.facebook || profile?.social?.instagram || profile?.social?.youtube
+  const hasSocial =
+    profile?.social?.facebook || profile?.social?.instagram || profile?.social?.youtube
   const hasServices = profile?.services && profile.services.length > 0
+  const beliefs = (profile?.beliefs as { title: string; content: string; id?: string }[]) ?? []
+  const hasBeliefs = beliefs.length > 0 || !!profile?.denomination
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -48,11 +51,7 @@ export default async function AboutPage() {
       <PublicHeader churchName={tenant.name} logoUrl={logoUrl} isLoggedIn={!!user} />
 
       {/* ── Hero ── */}
-      <PublicPageHero
-        title="À propos"
-        subtitle="Apprenez à nous connaître"
-        className="bg-cream"
-      />
+      <PublicPageHero title="À propos" subtitle="Apprenez à nous connaître" className="bg-cream" />
 
       {/* ── Qui sommes-nous ── */}
       {profile?.description && (
@@ -72,31 +71,36 @@ export default async function AboutPage() {
         </section>
       )}
 
-      {/* ── Nos cultes ── */}
-      {hasServices && (
+      {/* ── Confession de foi ── */}
+      {hasBeliefs && (
         <section className="bg-raisin px-4 py-14">
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-4xl">
             <ScrollReveal>
-              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-cream mb-8 text-center">
-                Nos cultes
+              <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-cream mb-2 text-center">
+                Ce en quoi nous <AnimatedUnderline>croyons</AnimatedUnderline>
               </h2>
             </ScrollReveal>
-            <div className="grid gap-4 sm:grid-cols-2 max-w-2xl mx-auto">
-              {profile!.services!.map((service, i) => (
-                <ScrollReveal key={service.id || service.label} delay={i * 0.1}>
-                  <div className="rounded-xl bg-cream/10 border border-cream/10 p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-sunglow" />
-                      <span className="font-heading font-bold text-sm uppercase tracking-wide text-sunglow">
-                        {DAY_LABELS[service.day] || service.day}
-                      </span>
+            {profile?.denomination && (
+              <ScrollReveal delay={0.05}>
+                <p className="text-cream/60 text-center mb-8">{profile.denomination}</p>
+              </ScrollReveal>
+            )}
+            {beliefs.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {beliefs.map((belief, i) => (
+                  <ScrollReveal key={belief.id ?? i} delay={i * 0.08}>
+                    <div className="rounded-xl bg-cream/10 border border-cream/10 p-5">
+                      <h3 className="font-heading font-bold text-sm uppercase tracking-wide text-sunglow mb-2">
+                        {belief.title}
+                      </h3>
+                      <p className="text-cream/80 text-sm leading-relaxed whitespace-pre-wrap">
+                        {belief.content}
+                      </p>
                     </div>
-                    <p className="text-cream font-medium">{service.label}</p>
-                    <p className="text-cream/60 text-sm mt-0.5">{formatServiceTime(service.time)}</p>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
+                  </ScrollReveal>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -136,9 +140,7 @@ export default async function AboutPage() {
             <ScrollReveal delay={0.2}>
               <div className="mt-8 text-center">
                 <Button asChild variant="sunglow" size="default">
-                  <Link href="/contact">
-                    Nous écrire
-                  </Link>
+                  <Link href="/contact">Nous écrire</Link>
                 </Button>
               </div>
             </ScrollReveal>
@@ -159,7 +161,11 @@ export default async function AboutPage() {
               <div className="flex flex-wrap justify-center gap-4">
                 {profile!.social!.facebook && (
                   <Button asChild variant="raisin" size="default">
-                    <Link href={profile!.social!.facebook} target="_blank" rel="noopener noreferrer">
+                    <Link
+                      href={profile!.social!.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <Facebook className="h-4 w-4" />
                       Facebook
                     </Link>
@@ -167,7 +173,11 @@ export default async function AboutPage() {
                 )}
                 {profile!.social!.instagram && (
                   <Button asChild variant="violet" size="default">
-                    <Link href={profile!.social!.instagram} target="_blank" rel="noopener noreferrer">
+                    <Link
+                      href={profile!.social!.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <Instagram className="h-4 w-4" />
                       Instagram
                     </Link>
@@ -197,11 +207,7 @@ export default async function AboutPage() {
       )}
 
       {/* ── Footer ── */}
-      <PublicFooter
-        churchName={tenant.name}
-        logoUrl={logoUrl}
-        social={profile?.social}
-      />
+      <PublicFooter churchName={tenant.name} logoUrl={logoUrl} social={profile?.social} />
     </div>
   )
 }

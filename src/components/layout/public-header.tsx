@@ -10,6 +10,7 @@ import { StaggeredMenu, type StaggeredMenuItem } from '@/components/layout/stagg
 const navItems: StaggeredMenuItem[] = [
   { href: '/', label: 'Accueil', exact: true },
   { href: '/events', label: 'Événements' },
+  { href: '/visit', label: 'Première visite' },
   { href: '/about', label: 'À propos' },
   { href: '/contact', label: 'Contact' },
 ]

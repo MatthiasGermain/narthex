@@ -37,6 +37,23 @@ export default async function DashboardProfilePage() {
                   phone: profile.contact?.phone ?? undefined,
                   website: profile.contact?.website ?? undefined,
                 },
+                visitInfo: {
+                  duration: profile.visitInfo?.duration ?? undefined,
+                  serviceFlow: profile.visitInfo?.serviceFlow ?? undefined,
+                  childrenInfo: profile.visitInfo?.childrenInfo ?? undefined,
+                  parking: profile.visitInfo?.parking ?? undefined,
+                },
+                faq: (profile.faq as { question: string; answer: string; id?: string }[])?.map(f => ({
+                  question: f.question,
+                  answer: f.answer,
+                  id: f.id,
+                })),
+                denomination: profile.denomination ?? undefined,
+                beliefs: (profile.beliefs as { title: string; content: string; id?: string }[])?.map(b => ({
+                  title: b.title,
+                  content: b.content,
+                  id: b.id,
+                })),
                 social: {
                   facebook: profile.social?.facebook ?? undefined,
                   instagram: profile.social?.instagram ?? undefined,

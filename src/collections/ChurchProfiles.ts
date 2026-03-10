@@ -119,6 +119,111 @@ export const ChurchProfiles: CollectionConfig = {
       ],
     },
     {
+      name: 'visitInfo',
+      type: 'group',
+      label: 'Première visite',
+      admin: {
+        description: 'Informations pour les nouveaux visiteurs',
+      },
+      fields: [
+        {
+          name: 'duration',
+          type: 'text',
+          label: 'Durée du culte',
+          admin: {
+            placeholder: 'Ex: Environ 1h30',
+          },
+        },
+        {
+          name: 'serviceFlow',
+          type: 'textarea',
+          label: 'Déroulé du culte',
+          admin: {
+            description: 'Décrivez le déroulement type du culte (louange, prédication, etc.)',
+            rows: 3,
+          },
+        },
+        {
+          name: 'childrenInfo',
+          type: 'textarea',
+          label: 'Accueil des enfants',
+          admin: {
+            description: 'Garderie, école du dimanche, tranches d\'âge, etc.',
+            rows: 3,
+          },
+        },
+        {
+          name: 'parking',
+          type: 'text',
+          label: 'Parking / accès',
+          admin: {
+            placeholder: 'Ex: Parking gratuit sur place, accès PMR',
+          },
+        },
+      ],
+    },
+    {
+      name: 'faq',
+      type: 'array',
+      label: 'Questions fréquentes',
+      admin: {
+        description: 'FAQ affichée sur la page « Première visite »',
+      },
+      fields: [
+        {
+          name: 'question',
+          type: 'text',
+          required: true,
+          label: 'Question',
+        },
+        {
+          name: 'answer',
+          type: 'textarea',
+          required: true,
+          label: 'Réponse',
+          admin: {
+            rows: 3,
+          },
+        },
+      ],
+    },
+    {
+      name: 'denomination',
+      type: 'text',
+      label: 'Affiliation / courant',
+      admin: {
+        placeholder: 'Ex: Église évangélique, Baptiste, Assemblée de Dieu',
+      },
+    },
+    {
+      name: 'beliefs',
+      type: 'array',
+      label: 'Confession de foi',
+      admin: {
+        description: 'Points de foi affichés sur la page publique',
+      },
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          required: true,
+          label: 'Thème',
+          admin: {
+            placeholder: 'Ex: La Bible, Dieu, Le salut, Le baptême',
+          },
+        },
+        {
+          name: 'content',
+          type: 'textarea',
+          required: true,
+          label: 'Énoncé',
+          admin: {
+            rows: 3,
+          },
+        },
+      ],
+    },
+    {
       name: 'social',
       type: 'group',
       label: 'Réseaux sociaux',

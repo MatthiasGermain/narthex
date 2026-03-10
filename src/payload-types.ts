@@ -317,6 +317,42 @@ export interface ChurchProfile {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Informations pour les nouveaux visiteurs
+   */
+  visitInfo?: {
+    duration?: string | null;
+    /**
+     * Décrivez le déroulement type du culte (louange, prédication, etc.)
+     */
+    serviceFlow?: string | null;
+    /**
+     * Garderie, école du dimanche, tranches d'âge, etc.
+     */
+    childrenInfo?: string | null;
+    parking?: string | null;
+  };
+  /**
+   * FAQ affichée sur la page « Première visite »
+   */
+  faq?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  denomination?: string | null;
+  /**
+   * Points de foi affichés sur la page publique
+   */
+  beliefs?:
+    | {
+        title: string;
+        content: string;
+        id?: string | null;
+      }[]
+    | null;
   social?: {
     facebook?: string | null;
     instagram?: string | null;
@@ -693,6 +729,29 @@ export interface ChurchProfilesSelect<T extends boolean = true> {
         label?: T;
         day?: T;
         time?: T;
+        id?: T;
+      };
+  visitInfo?:
+    | T
+    | {
+        duration?: T;
+        serviceFlow?: T;
+        childrenInfo?: T;
+        parking?: T;
+      };
+  faq?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  denomination?: T;
+  beliefs?:
+    | T
+    | {
+        title?: T;
+        content?: T;
         id?: T;
       };
   social?:
