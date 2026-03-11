@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    'audio-media': AudioMedia;
     churches: Church;
     'church-branding': ChurchBranding;
     'church-profiles': ChurchProfile;
@@ -76,6 +77,7 @@ export interface Config {
     rooms: Room;
     members: Member;
     'service-plans': ServicePlan;
+    sermons: Sermon;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -85,6 +87,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'audio-media': AudioMediaSelect<false> | AudioMediaSelect<true>;
     churches: ChurchesSelect<false> | ChurchesSelect<true>;
     'church-branding': ChurchBrandingSelect<false> | ChurchBrandingSelect<true>;
     'church-profiles': ChurchProfilesSelect<false> | ChurchProfilesSelect<true>;
@@ -92,6 +95,7 @@ export interface Config {
     rooms: RoomsSelect<false> | RoomsSelect<true>;
     members: MembersSelect<false> | MembersSelect<true>;
     'service-plans': ServicePlansSelect<false> | ServicePlansSelect<true>;
+    sermons: SermonsSelect<false> | SermonsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -228,6 +232,26 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audio-media".
+ */
+export interface AudioMedia {
+  id: number;
+  church?: (number | null) | Church;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * Charte graphique : logo, favicon et couleurs
@@ -488,6 +512,45 @@ export interface ServicePlan {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sermons".
+ */
+export interface Sermon {
+  id: number;
+  title: string;
+  date: string;
+  preacher?: (number | null) | Member;
+  /**
+   * Nom de la série de prédications (optionnel)
+   */
+  series?: string | null;
+  scripture?: string | null;
+  description?: string | null;
+  /**
+   * MP3 ou autre fichier audio de la prédication
+   */
+  audioFile?: (number | null) | AudioMedia;
+  /**
+   * URL YouTube ou autre plateforme vidéo
+   */
+  videoUrl?: string | null;
+  /**
+   * Image optionnelle pour illustrer la prédication
+   */
+  image?: (number | null) | Media;
+  visibility: 'public' | 'internal';
+  /**
+   * Auto-assigné au créateur
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Auto-assigné à votre église
+   */
+  church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -519,6 +582,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'audio-media';
+        value: number | AudioMedia;
+      } | null)
+    | ({
         relationTo: 'churches';
         value: number | Church;
       } | null)
@@ -545,6 +612,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'service-plans';
         value: number | ServicePlan;
+      } | null)
+    | ({
+        relationTo: 'sermons';
+        value: number | Sermon;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -659,6 +730,25 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audio-media_select".
+ */
+export interface AudioMediaSelect<T extends boolean = true> {
+  church?: T;
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -833,6 +923,26 @@ export interface ServicePlansSelect<T extends boolean = true> {
         id?: T;
       };
   notes?: T;
+  createdBy?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sermons_select".
+ */
+export interface SermonsSelect<T extends boolean = true> {
+  title?: T;
+  date?: T;
+  preacher?: T;
+  series?: T;
+  scripture?: T;
+  description?: T;
+  audioFile?: T;
+  videoUrl?: T;
+  image?: T;
+  visibility?: T;
   createdBy?: T;
   church?: T;
   updatedAt?: T;

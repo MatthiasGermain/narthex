@@ -64,27 +64,29 @@ export default async function VisitPage() {
       {/* ── Infos pratiques ── */}
       {infoCards.length > 0 && (
         <section className="bg-cream/50 px-4 py-14">
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-3xl">
             <ScrollReveal>
               <h2 className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-wide text-raisin mb-8 text-center">
                 À quoi <AnimatedUnderline>s&apos;attendre</AnimatedUnderline> ?
               </h2>
             </ScrollReveal>
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="flex flex-col gap-4">
               {infoCards.map((card, i) => (
                 <ScrollReveal key={card.label} delay={i * 0.1}>
                   <div className="rounded-xl bg-cream border border-raisin/8 p-6 shadow-[0_2px_12px_rgba(30,41,82,0.04)]">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex items-center justify-center h-10 w-10 rounded-full bg-sunglow/15 shrink-0">
+                    <div className="flex items-start gap-4">
+                      <div className="flex items-center justify-center h-10 w-10 rounded-full bg-sunglow/15 shrink-0 mt-0.5">
                         <card.icon className="h-5 w-5 text-sunglow" />
                       </div>
-                      <h3 className="font-heading font-bold text-sm uppercase tracking-wide text-raisin">
-                        {card.label}
-                      </h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-heading font-bold text-sm uppercase tracking-wide text-raisin mb-1">
+                          {card.label}
+                        </h3>
+                        <p className="text-raisin/70 text-sm leading-relaxed whitespace-pre-wrap">
+                          {card.value}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-raisin/70 text-sm leading-relaxed whitespace-pre-wrap">
-                      {card.value}
-                    </p>
                   </div>
                 </ScrollReveal>
               ))}
@@ -102,7 +104,7 @@ export default async function VisitPage() {
                 Quand et <AnimatedUnderline>où</AnimatedUnderline> ?
               </h2>
             </ScrollReveal>
-            <div className="grid gap-6 sm:grid-cols-2 max-w-2xl mx-auto">
+            <div className="grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto">
               {services.map((service, i) => (
                 <ScrollReveal key={service.id || service.label} delay={i * 0.1}>
                   <div className="rounded-xl bg-cream/10 border border-cream/10 p-5">

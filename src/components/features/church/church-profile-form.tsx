@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -90,6 +90,57 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
   const [facebook, setFacebook] = useState(defaultValues?.social?.facebook ?? '')
   const [instagram, setInstagram] = useState(defaultValues?.social?.instagram ?? '')
   const [youtube, setYoutube] = useState(defaultValues?.social?.youtube ?? '')
+
+  const isDirty = useMemo(() => {
+    const d = defaultValues
+    if (description !== (d?.description ?? '')) return true
+    if (street !== (d?.address?.street ?? '')) return true
+    if (postalCode !== (d?.address?.postalCode ?? '')) return true
+    if (city !== (d?.address?.city ?? '')) return true
+    if (email !== (d?.contact?.email ?? '')) return true
+    if (phone !== (d?.contact?.phone ?? '')) return true
+    if (website !== (d?.contact?.website ?? '')) return true
+    if (duration !== (d?.visitInfo?.duration ?? '')) return true
+    if (serviceFlow !== (d?.visitInfo?.serviceFlow ?? '')) return true
+    if (childrenInfo !== (d?.visitInfo?.childrenInfo ?? '')) return true
+    if (parking !== (d?.visitInfo?.parking ?? '')) return true
+    if (denomination !== (d?.denomination ?? '')) return true
+    if (facebook !== (d?.social?.facebook ?? '')) return true
+    if (instagram !== (d?.social?.instagram ?? '')) return true
+    if (youtube !== (d?.social?.youtube ?? '')) return true
+    const defaultFaq = d?.faq ?? []
+    if (faq.length !== defaultFaq.length) return true
+    if (faq.some((f, i) => f.question !== defaultFaq[i]?.question || f.answer !== defaultFaq[i]?.answer)) return true
+    const defaultBeliefs = d?.beliefs ?? []
+    if (beliefs.length !== defaultBeliefs.length) return true
+    if (beliefs.some((b, i) => b.title !== defaultBeliefs[i]?.title || b.content !== defaultBeliefs[i]?.content)) return true
+    return false
+  }, [description, street, postalCode, city, email, phone, website, duration, serviceFlow, childrenInfo, parking, denomination, facebook, instagram, youtube, faq, beliefs, defaultValues])
+
+  const handleReset = useCallback(() => {
+    const d = defaultValues
+    setDescription(d?.description ?? '')
+    setStreet(d?.address?.street ?? '')
+    setPostalCode(d?.address?.postalCode ?? '')
+    setCity(d?.address?.city ?? '')
+    setEmail(d?.contact?.email ?? '')
+    setPhone(d?.contact?.phone ?? '')
+    setWebsite(d?.contact?.website ?? '')
+    setDuration(d?.visitInfo?.duration ?? '')
+    setServiceFlow(d?.visitInfo?.serviceFlow ?? '')
+    setChildrenInfo(d?.visitInfo?.childrenInfo ?? '')
+    setParking(d?.visitInfo?.parking ?? '')
+    setDenomination(d?.denomination ?? '')
+    setFacebook(d?.social?.facebook ?? '')
+    setInstagram(d?.social?.instagram ?? '')
+    setYoutube(d?.social?.youtube ?? '')
+    setFaq(d?.faq ?? [])
+    setFaqPage(0)
+    setFaqOpen(null)
+    setBeliefs(d?.beliefs ?? [])
+    setBeliefsOpen(null)
+    setErrors({})
+  }, [defaultValues])
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
@@ -183,11 +234,11 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-4xl">
       <Tabs defaultValue="general">
-        <TabsList>
-          <TabsTrigger value="general">Général</TabsTrigger>
-          <TabsTrigger value="contact">Contact & Réseaux</TabsTrigger>
-          <TabsTrigger value="visit">Première visite</TabsTrigger>
-          <TabsTrigger value="beliefs">Confession de foi</TabsTrigger>
+        <TabsList className="grid grid-cols-2 gap-1 sm:inline-flex sm:w-fit h-auto sm:h-9 bg-transparent sm:bg-muted p-1 sm:p-[3px] rounded-lg">
+          <TabsTrigger value="general" className="bg-muted data-[state=active]:bg-background sm:bg-transparent">Général</TabsTrigger>
+          <TabsTrigger value="contact" className="bg-muted data-[state=active]:bg-background sm:bg-transparent">Contact & Réseaux</TabsTrigger>
+          <TabsTrigger value="visit" className="bg-muted data-[state=active]:bg-background sm:bg-transparent">Première visite</TabsTrigger>
+          <TabsTrigger value="beliefs" className="bg-muted data-[state=active]:bg-background sm:bg-transparent">Confession de foi</TabsTrigger>
         </TabsList>
 
         {/* ─── Onglet Général ─── */}
@@ -376,7 +427,7 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
             </section>
 
             {/* Colonne droite — FAQ */}
-            <section className="flex flex-col gap-4 min-h-[520px]">
+            <section className="flex flex-col gap-4 lg:min-h-[520px]">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">Questions fréquentes</h2>
@@ -527,7 +578,7 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
             </section>
 
             {/* Colonne droite — Points de foi */}
-            <section className="flex flex-col gap-4 min-h-[520px]">
+            <section className="flex flex-col gap-4 lg:min-h-[520px]">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold">Points de foi</h2>
@@ -619,10 +670,19 @@ export function ChurchProfileForm({ mode, profileId, tenantId, defaultValues }: 
         </TabsContent>
       </Tabs>
 
-      {/* Actions — sticky en bas */}
-      <div className="sticky bottom-0 bg-background border-t py-4 -mx-1 px-1">
+      {/* Actions — visible uniquement si modifié */}
+      <div
+        className={`sticky bottom-0 bg-background border-t py-4 -mx-1 px-1 flex items-center gap-3 transition-all duration-300 ease-out ${
+          isDirty
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
         <Button type="submit" disabled={loading}>
           {loading ? 'Enregistrement...' : 'Enregistrer'}
+        </Button>
+        <Button type="button" variant="outline" disabled={loading} onClick={handleReset}>
+          Annuler
         </Button>
       </div>
     </form>

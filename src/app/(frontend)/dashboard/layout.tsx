@@ -1,4 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
+import { getPayload } from 'payload'
+import config from '@payload-config'
 
 import { resolveTenant } from '@/lib/tenant'
 import { checkUserTenantAccess } from '@/lib/tenant-check'
@@ -29,6 +31,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const churchName = tenant.name
 
+  // Récupérer le nom du membre lié à l'utilisateur
+  const payload = await getPayload({ config })
+  const { docs: memberDocs } = await payload.find({
+    collection: 'members',
+    where: { user: { equals: user.id }, church: { equals: tenant.id } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  })
+  const member = memberDocs[0]
+  const userName = member ? `${member.firstName} ${member.lastName}`.trim() : null
+
   return (
     <div className="min-h-screen">
       <NavigationProgress />
@@ -36,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar churchName={churchName} userRole={user.role} />
 
       <div className="md:pl-60 min-h-screen flex flex-col">
-        <Header churchName={churchName} userEmail={user.email} userRole={user.role} />
+        <Header churchName={churchName} userEmail={user.email} userName={userName} userRole={user.role} />
 
         <main className="flex-1 p-4 sm:p-6">
           <PageTransition>{children}</PageTransition>

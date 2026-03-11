@@ -4,7 +4,6 @@ import { Globe, Facebook, Instagram, Youtube } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
-import { DAY_LABELS, formatServiceTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
 import { PublicFooter } from '@/components/layout/public-footer'
 import { PublicPageHero } from '@/components/layout/public-page-hero'
