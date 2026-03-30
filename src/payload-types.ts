@@ -79,6 +79,7 @@ export interface Config {
     'service-plans': ServicePlan;
     sermons: Sermon;
     invitations: Invitation;
+    groups: Group;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -98,6 +99,7 @@ export interface Config {
     'service-plans': ServicePlansSelect<false> | ServicePlansSelect<true>;
     sermons: SermonsSelect<false> | SermonsSelect<true>;
     invitations: InvitationsSelect<false> | InvitationsSelect<true>;
+    groups: GroupsSelect<false> | GroupsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -143,6 +145,7 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   role: 'super-admin' | 'admin-church' | 'volunteer';
+  lastLogin?: string | null;
   tenants?:
     | {
         tenant: number | Church;
@@ -571,6 +574,21 @@ export interface Invitation {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "groups".
+ */
+export interface Group {
+  id: number;
+  name: string;
+  description?: string | null;
+  members?: (number | Member)[] | null;
+  leader?: (number | null) | Member;
+  createdBy?: (number | null) | User;
+  church: number | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -640,6 +658,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'invitations';
         value: number | Invitation;
+      } | null)
+    | ({
+        relationTo: 'groups';
+        value: number | Group;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -689,6 +711,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
+  lastLogin?: T;
   tenants?:
     | T
     | {
@@ -985,6 +1008,20 @@ export interface InvitationsSelect<T extends boolean = true> {
   role?: T;
   firstName?: T;
   lastName?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "groups_select".
+ */
+export interface GroupsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  members?: T;
+  leader?: T;
+  createdBy?: T;
   church?: T;
   updatedAt?: T;
   createdAt?: T;

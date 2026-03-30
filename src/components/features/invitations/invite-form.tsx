@@ -71,7 +71,11 @@ export function InviteForm({ churchId }: InviteFormProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        const message = data?.errors?.[0]?.message || 'Erreur lors de l\'envoi'
+        const message =
+          data?.errors?.[0]?.data?.errors?.[0]?.message ||
+          data?.errors?.[0]?.message ||
+          data?.message ||
+          'Erreur lors de l\'envoi'
         setError(message)
         return
       }

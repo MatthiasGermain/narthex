@@ -1,6 +1,7 @@
 import type {
   Access,
   CollectionAfterChangeHook,
+  CollectionAfterLoginHook,
   CollectionConfig,
   CollectionBeforeChangeHook,
   FieldAccess,
@@ -143,6 +144,18 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
   return doc
 }
 
+// Update lastLogin timestamp on every login
+const updateLastLogin: CollectionAfterLoginHook = async ({ req, user }) => {
+  await req.payload.update({
+    collection: 'users',
+    id: user.id,
+    data: { lastLogin: new Date().toISOString() },
+    overrideAccess: true,
+    req,
+  })
+  return user
+}
+
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
@@ -192,6 +205,7 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [enforceAllowedRole, assignTenantOnCreate],
     afterChange: [autoCreateMember],
+    afterLogin: [updateLastLogin],
   },
   access: {
     admin: ({ req }) => isSuperAdminCheck(req.user),
@@ -215,6 +229,16 @@ export const Users: CollectionConfig = {
       defaultValue: 'volunteer',
       access: {
         update: canEditRole,
+      },
+    },
+    {
+      name: 'lastLogin',
+      type: 'date',
+      label: 'Dernière connexion',
+      admin: {
+        readOnly: true,
+        date: { pickerAppearance: 'dayAndTime' },
+        position: 'sidebar',
       },
     },
     // Le champ 'tenants' (array de {tenant: church_id}) est injecté
