@@ -8,6 +8,7 @@ import {
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
+import { getTodayISO } from '@/lib/date-utils'
 import { DAY_LABELS, formatServiceTime } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
 import { PublicFooter } from '@/components/layout/public-footer'
@@ -51,7 +52,7 @@ export default async function HomePage() {
     where: {
       church: { equals: tenant.id },
       visibility: { equals: 'public' },
-      date: { greater_than_equal: new Date().toISOString().split('T')[0] },
+      date: { greater_than_equal: getTodayISO() },
     },
     sort: 'date',
     limit: 3,

@@ -9,7 +9,7 @@ const PLATFORM_DOMAINS = ['narthex.dev', 'www.narthex.dev']
 
 /** Endpoints avec rate limiting */
 const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
-  '/api/users/login': { limit: 5, windowMs: 15 * 60 * 1000 },
+  '/api/users/login': { limit: 15, windowMs: 15 * 60 * 1000 },
   '/api/users/forgot-password': { limit: 3, windowMs: 15 * 60 * 1000 },
   '/api/users/reset-password': { limit: 5, windowMs: 15 * 60 * 1000 },
   '/api/users': { limit: 10, windowMs: 15 * 60 * 1000 },

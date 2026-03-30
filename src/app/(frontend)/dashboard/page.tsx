@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Calendar, DoorOpen, Users } from 'lucide-react'
 import { resolveTenant } from '@/lib/tenant'
-import { formatFrenchDate } from '@/lib/date-utils'
+import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
 import { MonthlyTimeline, type TimelineItem } from '@/components/dashboard/monthly-timeline'
 import { ThisSunday } from '@/components/dashboard/this-sunday'
 
@@ -17,7 +17,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   // Mois demandé (ou mois courant)
   const params = await searchParams
-  const now = new Date()
+  const now = getNowParis()
   let year = now.getFullYear()
   let month = now.getMonth() // 0-indexed
 
@@ -29,14 +29,19 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth()
 
+  const todayISO = getTodayISO()
+
   // Plage du mois
   const startOfMonth = isCurrentMonth
     ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
     : new Date(year, month, 1)
   const endOfMonth = new Date(year, month + 1, 0)
 
-  const startISO = startOfMonth.toISOString().split('T')[0]
-  const endISO = endOfMonth.toISOString().split('T')[0]
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const startISO = isCurrentMonth
+    ? todayISO
+    : `${year}-${pad(month + 1)}-01`
+  const endISO = `${year}-${pad(month + 1)}-${pad(endOfMonth.getDate())}`
 
   // Navigation
   const prevDate = new Date(year, month - 1, 1)
@@ -80,8 +85,6 @@ export default async function DashboardPage({ searchParams }: Props) {
     overrideAccess: false,
     user,
   })
-
-  const todayISO = now.toISOString().split('T')[0]
 
   // Prochain culte (widget Ce dimanche)
   const nextPlanPromise = payload.find({

@@ -144,15 +144,14 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
   return doc
 }
 
-// Update lastLogin timestamp on every login
+// Update lastLogin timestamp on every login (no req to avoid re-triggering role validation)
 const updateLastLogin: CollectionAfterLoginHook = async ({ req, user }) => {
   await req.payload.update({
     collection: 'users',
     id: user.id,
     data: { lastLogin: new Date().toISOString() },
     overrideAccess: true,
-    req,
-  })
+  }).catch(() => null)
   return user
 }
 
@@ -205,7 +204,7 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [enforceAllowedRole, assignTenantOnCreate],
     afterChange: [autoCreateMember],
-    afterLogin: [updateLastLogin],
+    // afterLogin: [updateLastLogin], // TODO: fix infinite loop
   },
   access: {
     admin: ({ req }) => isSuperAdminCheck(req.user),

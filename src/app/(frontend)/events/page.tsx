@@ -3,6 +3,7 @@ import { CalendarX } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { resolveTenant } from '@/lib/tenant'
+import { getTodayISO } from '@/lib/date-utils'
 import { formatDate } from '@/lib/format'
 import { PublicHeader } from '@/components/layout/public-header'
 import { PublicFooter } from '@/components/layout/public-footer'
@@ -44,7 +45,7 @@ export default async function PublicEventsPage() {
     overrideAccess: true,
   })
 
-  const now = new Date().toISOString().split('T')[0]
+  const now = getTodayISO()
   const upcoming = events.filter((e) => e.date >= now)
   const past = events.filter((e) => e.date < now).reverse()
 
