@@ -18,6 +18,7 @@ import { Members } from './collections/Members'
 import { ServicePlans } from './collections/ServicePlans'
 import { Sermons } from './collections/Sermons'
 import { AudioMedia } from './collections/AudioMedia'
+import { Invitations } from './collections/Invitations'
 import { isSuperAdminCheck } from './access/roles'
 
 const filename = fileURLToPath(import.meta.url)
@@ -44,7 +45,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, AudioMedia, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members, ServicePlans, Sermons],
+  collections: [Users, Media, AudioMedia, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members, ServicePlans, Sermons, Invitations],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {
@@ -80,6 +81,9 @@ export default buildConfig({
           customTenantField: true,
         },
         sermons: {
+          customTenantField: true,
+        },
+        invitations: {
           customTenantField: true,
         },
         media: {},

@@ -78,6 +78,7 @@ export interface Config {
     members: Member;
     'service-plans': ServicePlan;
     sermons: Sermon;
+    invitations: Invitation;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -96,6 +97,7 @@ export interface Config {
     members: MembersSelect<false> | MembersSelect<true>;
     'service-plans': ServicePlansSelect<false> | ServicePlansSelect<true>;
     sermons: SermonsSelect<false> | SermonsSelect<true>;
+    invitations: InvitationsSelect<false> | InvitationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -551,6 +553,24 @@ export interface Sermon {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invitations".
+ */
+export interface Invitation {
+  id: number;
+  email: string;
+  status: 'pending' | 'accepted' | 'expired';
+  token: string;
+  expiresAt: string;
+  invitedBy?: (number | null) | User;
+  role: 'volunteer' | 'admin-church';
+  firstName?: string | null;
+  lastName?: string | null;
+  church: number | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -616,6 +636,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'sermons';
         value: number | Sermon;
+      } | null)
+    | ({
+        relationTo: 'invitations';
+        value: number | Invitation;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -944,6 +968,23 @@ export interface SermonsSelect<T extends boolean = true> {
   image?: T;
   visibility?: T;
   createdBy?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invitations_select".
+ */
+export interface InvitationsSelect<T extends boolean = true> {
+  email?: T;
+  status?: T;
+  token?: T;
+  expiresAt?: T;
+  invitedBy?: T;
+  role?: T;
+  firstName?: T;
+  lastName?: T;
   church?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { toast } from 'sonner'
-import { Upload, X, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2, ShieldCheck } from 'lucide-react'
 import { getInitialMedia } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,6 +38,8 @@ interface MemberFormProps {
   defaultValues?: MemberData
   churchId: number
   userRole: string
+  currentUserId?: number
+  linkedUserRole?: string
 }
 
 const getInitialPhoto = (photo: MemberData['photo']) => getInitialMedia(photo)
@@ -48,7 +50,7 @@ function getLinkedUser(user: MemberData['user']): { id: number | null; email: st
   return { id: user.id, email: user.email || null }
 }
 
-export function MemberForm({ mode, defaultValues, churchId, userRole }: MemberFormProps) {
+export function MemberForm({ mode, defaultValues, churchId, userRole, currentUserId, linkedUserRole }: MemberFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -72,8 +74,45 @@ export function MemberForm({ mode, defaultValues, churchId, userRole }: MemberFo
   const [linkedUserEmail, setLinkedUserEmail] = useState<string | null>(initialUser.email)
 
   const [createAccount, setCreateAccount] = useState(false)
+  const [userRoleValue, setUserRoleValue] = useState(linkedUserRole || 'volunteer')
+  const [changingRole, setChangingRole] = useState(false)
 
   const isAdminUser = userRole === 'super-admin' || userRole === 'admin-church'
+
+  // Le sélecteur de rôle est désactivé si : c'est le user courant, ou c'est un super-admin
+  const isSelf = Boolean(currentUserId && linkedUserId && currentUserId === linkedUserId)
+  const isLinkedSuperAdmin = linkedUserRole === 'super-admin'
+  const canChangeRole = isAdminUser && linkedUserId && !isSelf && !isLinkedSuperAdmin
+
+  async function handleRoleChange(newRole: string) {
+    if (!linkedUserId || newRole === userRoleValue) return
+
+    const confirmed = newRole === 'admin-church'
+      ? window.confirm('Êtes-vous sûr de vouloir donner les droits d\'administration à ce membre ?')
+      : window.confirm('Êtes-vous sûr de vouloir retirer les droits d\'administration à ce membre ?')
+
+    if (!confirmed) return
+
+    setChangingRole(true)
+    try {
+      const res = await fetch(`/api/users/${linkedUserId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        toast.error(data?.errors?.[0]?.message || 'Erreur lors du changement de rôle')
+        return
+      }
+      setUserRoleValue(newRole)
+      toast.success(newRole === 'admin-church' ? 'Promu administrateur' : 'Rétrogradé bénévole')
+    } catch {
+      toast.error('Une erreur est survenue')
+    } finally {
+      setChangingRole(false)
+    }
+  }
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
@@ -389,24 +428,63 @@ export function MemberForm({ mode, defaultValues, churchId, userRole }: MemberFo
             <h3 className="font-heading font-bold text-lg">Compte utilisateur</h3>
 
             {linkedUserId ? (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Compte lié</p>
-                  <p className="text-sm text-muted-foreground">
-                    {linkedUserEmail || `Utilisateur #${linkedUserId}`}
-                  </p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Compte lié</p>
+                    <p className="text-sm text-muted-foreground">
+                      {linkedUserEmail || `Utilisateur #${linkedUserId}`}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLinkedUserId(null)
+                      setLinkedUserEmail(null)
+                    }}
+                  >
+                    Délier
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setLinkedUserId(null)
-                    setLinkedUserEmail(null)
-                  }}
-                >
-                  Délier
-                </Button>
+
+                {/* Sélecteur de rôle */}
+                {canChangeRole ? (
+                  <div className="flex flex-col gap-2">
+                    <Label className="flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4" />
+                      Rôle applicatif
+                    </Label>
+                    <Select
+                      value={userRoleValue}
+                      onValueChange={handleRoleChange}
+                      disabled={changingRole}
+                    >
+                      <SelectTrigger className="max-w-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="volunteer">Bénévole</SelectItem>
+                        <SelectItem value="admin-church">Admin Église</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Détermine les droits d&apos;accès au dashboard (création, modification, suppression).
+                    </p>
+                  </div>
+                ) : linkedUserId && (isSelf || isLinkedSuperAdmin) ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>
+                      {isLinkedSuperAdmin
+                        ? 'Super-Admin (non modifiable)'
+                        : userRoleValue === 'admin-church'
+                          ? 'Admin Église (votre compte)'
+                          : 'Bénévole (votre compte)'}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <>

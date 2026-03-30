@@ -17,6 +17,8 @@ const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   '/api/events': { limit: 20, windowMs: 15 * 60 * 1000 },
   '/api/rooms': { limit: 10, windowMs: 15 * 60 * 1000 },
   '/api/media': { limit: 30, windowMs: 15 * 60 * 1000 },
+  '/api/invitations/accept': { limit: 5, windowMs: 15 * 60 * 1000 },
+  '/api/invitations': { limit: 10, windowMs: 15 * 60 * 1000 },
 }
 
 function extractTenantSlug(req: NextRequest): string | null {

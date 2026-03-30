@@ -39,6 +39,10 @@ export default async function EditMemberPage({
     typeof member.church === 'object' ? (member.church as { id: number })?.id : member.church
   if (String(memberChurchId) !== String(tenant.id)) notFound()
 
+  // Extraire le rôle du user lié (depth:1 donne un objet)
+  const linkedUser = member.user as { id: number; email?: string; role?: string } | number | null
+  const linkedUserRole = linkedUser && typeof linkedUser === 'object' ? linkedUser.role : undefined
+
   const defaultValues = {
     id: member.id,
     firstName: member.firstName,
@@ -74,6 +78,8 @@ export default async function EditMemberPage({
         mode="edit"
         churchId={tenant.id}
         userRole={user.role}
+        currentUserId={user.id}
+        linkedUserRole={linkedUserRole}
         defaultValues={defaultValues}
       />
     </div>

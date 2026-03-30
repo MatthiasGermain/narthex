@@ -17,8 +17,9 @@ const updateScopedToTenant = ({ req: { user } }: { req: { user: unknown } }) => 
   return { 'tenants.tenant': { in: tenantIDs } }
 }
 
-const onlySuperAdminCanEditRole: FieldAccess = ({ req: { user } }) => {
-  return (user as { role?: string })?.role === 'super-admin'
+const canEditRole: FieldAccess = ({ req: { user } }) => {
+  const role = (user as { role?: string })?.role
+  return role === 'super-admin' || role === 'admin-church'
 }
 
 // Allow admin-church to create user accounts (hook enforces volunteer-only)
@@ -30,14 +31,42 @@ const canCreateUser: Access = ({ req: { user } }) => {
   return false
 }
 
-// Force role=volunteer when admin-church creates a user (security)
-const enforceVolunteerRole: CollectionBeforeChangeHook = ({ req, operation, data }) => {
-  if (operation === 'create') {
-    const user = req.user as { role?: string } | undefined
-    if (user?.role === 'admin-church') {
-      data.role = 'volunteer'
+// Enforce allowed roles: admin-church can set volunteer or admin-church, never super-admin
+const enforceAllowedRole: CollectionBeforeChangeHook = async ({ req, operation, data, originalDoc }) => {
+  const currentUser = req.user as { id?: number; role?: string } | undefined
+  if (!currentUser) return data
+
+  // Super-admins can do anything
+  if (currentUser.role === 'super-admin') return data
+
+  if (currentUser.role === 'admin-church') {
+    if (operation === 'create') {
+      // admin-church can create volunteer or admin-church, never super-admin
+      if (data.role === 'super-admin') {
+        data.role = 'volunteer'
+      }
+    }
+
+    if (operation === 'update' && data.role !== undefined) {
+      // Cannot change own role
+      if (originalDoc?.id === currentUser.id) {
+        delete data.role
+        return data
+      }
+
+      // Cannot modify a super-admin's role
+      if (originalDoc?.role === 'super-admin') {
+        delete data.role
+        return data
+      }
+
+      // Can only set volunteer or admin-church
+      if (data.role === 'super-admin') {
+        data.role = originalDoc?.role || 'volunteer'
+      }
     }
   }
+
   return data
 }
 
@@ -161,7 +190,7 @@ export const Users: CollectionConfig = {
     },
   },
   hooks: {
-    beforeChange: [enforceVolunteerRole, assignTenantOnCreate],
+    beforeChange: [enforceAllowedRole, assignTenantOnCreate],
     afterChange: [autoCreateMember],
   },
   access: {
@@ -185,7 +214,7 @@ export const Users: CollectionConfig = {
       ],
       defaultValue: 'volunteer',
       access: {
-        update: onlySuperAdminCanEditRole,
+        update: canEditRole,
       },
     },
     // Le champ 'tenants' (array de {tenant: church_id}) est injecté
