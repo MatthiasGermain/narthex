@@ -63,7 +63,7 @@ export async function importMembers(rows: ImportRow[]): Promise<ImportResult[]> 
           lastName: row.lastName,
           email: row.email || undefined,
           phone: row.phone || undefined,
-          churchRole: row.churchRole || 'membre',
+          churchRole: (row.churchRole || 'membre') as 'pasteur' | 'diacre' | 'ancien' | 'responsable' | 'membre' | 'visiteur',
           isActive: true,
           church: tenant.id,
         },

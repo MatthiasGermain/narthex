@@ -14,6 +14,26 @@ import { InvitationActions } from '@/components/features/invitations/invitation-
 import { GroupActions } from '@/components/features/groups/group-actions'
 import type { SerializedMember } from '@/components/features/members/members-list'
 
+interface InvitationDisplay {
+  id: number
+  email: string
+  status: string
+  firstName?: string | null
+  lastName?: string | null
+  role: string
+  createdAt: string
+  expiresAt: string
+  invitedBy?: number | { id: number; email?: string } | null
+}
+
+interface GroupDisplay {
+  id: number
+  name: string
+  description?: string | null
+  members?: Array<{ id: number; firstName: string; lastName: string }> | number[] | null
+  leader?: { id: number; firstName: string; lastName: string } | number | null
+}
+
 const STATUS_CONFIG = {
   pending: { label: 'En attente', icon: Clock, className: 'bg-sunglow/20 text-sunglow-foreground border-sunglow/30' },
   accepted: { label: 'Acceptée', icon: CheckCircle, className: 'bg-green-100 text-green-800 border-green-200' },
@@ -55,7 +75,7 @@ export default async function MembersPage() {
       depth: 1,
       overrideAccess: false,
       user,
-    }).catch(() => ({ docs: [] as any[] })),
+    }).catch(() => ({ docs: [] as GroupDisplay[] })),
     isAdmin
       ? payload.find({
           collection: 'invitations',
@@ -65,8 +85,8 @@ export default async function MembersPage() {
           depth: 1,
           overrideAccess: false,
           user,
-        })
-      : Promise.resolve({ docs: [] as any[] }),
+        }).then(r => ({ docs: r.docs as unknown as InvitationDisplay[] }))
+      : Promise.resolve({ docs: [] as InvitationDisplay[] }),
   ])
 
   // Sérialiser les membres
@@ -92,7 +112,7 @@ export default async function MembersPage() {
 
   // Invitations avec expiration
   const now = new Date()
-  const displayInvitations = invitationsResult.docs.map((inv: any) => {
+  const displayInvitations = invitationsResult.docs.map((inv: InvitationDisplay) => {
     if (inv.status === 'pending' && new Date(inv.expiresAt) < now) {
       return { ...inv, status: 'expired' as const }
     }
@@ -123,7 +143,7 @@ export default async function MembersPage() {
   )
 
   // --- Tab Groupes ---
-  const groups = groupsResult.docs
+  const groups = groupsResult.docs as unknown as GroupDisplay[]
   const groupesContent = (
     <div className="flex flex-col gap-4">
       {isAdmin && (
@@ -146,7 +166,7 @@ export default async function MembersPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {groups.map((group: any) => {
+          {groups.map((group: GroupDisplay) => {
             const members = Array.isArray(group.members) ? group.members : []
             const memberCount = members.length
             const leader = group.leader && typeof group.leader === 'object'
@@ -195,8 +215,8 @@ export default async function MembersPage() {
   )
 
   // --- Tab Invitations ---
-  const pending = displayInvitations.filter((inv: any) => inv.status === 'pending')
-  const others = displayInvitations.filter((inv: any) => inv.status !== 'pending')
+  const pending = displayInvitations.filter((inv: InvitationDisplay) => inv.status === 'pending')
+  const others = displayInvitations.filter((inv: InvitationDisplay) => inv.status !== 'pending')
 
   const invitationsContent = (
     <div className="flex flex-col gap-4">
@@ -219,7 +239,7 @@ export default async function MembersPage() {
                 En attente ({pending.length})
               </h2>
               <div className="flex flex-col gap-2">
-                {pending.map((inv: any) => {
+                {pending.map((inv: InvitationDisplay) => {
                   const status = inv.status as keyof typeof STATUS_CONFIG
                   const config = STATUS_CONFIG[status] || STATUS_CONFIG.expired
                   const StatusIcon = config.icon
@@ -262,7 +282,7 @@ export default async function MembersPage() {
                 Historique ({others.length})
               </h2>
               <div className="flex flex-col gap-2">
-                {others.map((inv: any) => {
+                {others.map((inv: InvitationDisplay) => {
                   const status = inv.status as keyof typeof STATUS_CONFIG
                   const config = STATUS_CONFIG[status] || STATUS_CONFIG.expired
                   const StatusIcon = config.icon

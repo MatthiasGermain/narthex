@@ -29,8 +29,6 @@ interface ImportResult {
   message: string
 }
 
-const VALID_ROLES = new Set(['pasteur', 'diacre', 'ancien', 'responsable', 'membre', 'visiteur'])
-
 function parseCsv(text: string, churchRoles: Set<string>): ParsedRow[] {
   const cleaned = text.replace(/^\uFEFF/, '')
   const lines = cleaned.split(/\r?\n/).filter((l) => l.trim())
