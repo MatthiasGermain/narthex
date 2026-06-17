@@ -52,6 +52,15 @@ export const ServicePlans: CollectionConfig = {
           hasMany: true,
           label: 'Membres assignés',
         },
+        {
+          name: 'group',
+          type: 'relationship',
+          relationTo: 'groups',
+          label: 'Groupe assigné',
+          admin: {
+            description: 'Pour les rôles servis par un groupe entier (ex : Louange)',
+          },
+        },
       ],
     },
     {

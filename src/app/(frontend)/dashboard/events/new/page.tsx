@@ -4,7 +4,11 @@ import { ArrowLeft } from 'lucide-react'
 import { resolveTenant } from '@/lib/tenant'
 import { EventForm } from '@/components/features/events/event-form'
 
-export default async function NewEventPage() {
+interface Props {
+  searchParams: Promise<{ date?: string }>
+}
+
+export default async function NewEventPage({ searchParams }: Props) {
   const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
@@ -21,6 +25,10 @@ export default async function NewEventPage() {
 
   const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
 
+  // Date pré-remplie depuis le calendrier (format YYYY-MM-DD)
+  const { date } = await searchParams
+  const defaultDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -34,7 +42,12 @@ export default async function NewEventPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">Nouvel événement</h1>
       </div>
 
-      <EventForm mode="create" churchId={tenant.id} rooms={rooms} />
+      <EventForm
+        mode="create"
+        churchId={tenant.id}
+        rooms={rooms}
+        defaultValues={defaultDate ? { date: defaultDate } : undefined}
+      />
     </div>
   )
 }

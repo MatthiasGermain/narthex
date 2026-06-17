@@ -25,7 +25,7 @@ export default async function EditPlanPage({
     notFound()
   }
 
-  const [plan, { docs: memberDocs }] = await Promise.all([
+  const [plan, { docs: memberDocs }, { docs: groupDocs }] = await Promise.all([
     payload
       .findByID({
         collection: 'service-plans',
@@ -44,6 +44,15 @@ export default async function EditPlanPage({
       overrideAccess: false,
       user,
     }),
+    payload.find({
+      collection: 'groups',
+      where: { church: { equals: tenant.id } },
+      sort: 'name',
+      limit: 200,
+      depth: 1,
+      overrideAccess: false,
+      user,
+    }),
   ])
 
   if (!plan) notFound()
@@ -58,6 +67,16 @@ export default async function EditPlanPage({
     lastName: m.lastName,
   }))
 
+  type LeaderRef = { firstName?: string; lastName?: string }
+  const groups = groupDocs.map((g) => {
+    const leader = g.leader && typeof g.leader === 'object' ? (g.leader as LeaderRef) : null
+    return {
+      id: g.id,
+      name: g.name,
+      leaderName: leader ? `${leader.firstName ?? ''} ${leader.lastName ?? ''}`.trim() || null : null,
+    }
+  })
+
   // Rôles configurés par l'église
   const serviceRoles =
     tenant.settings?.serviceRoles && tenant.settings.serviceRoles.length > 0
@@ -69,15 +88,21 @@ export default async function EditPlanPage({
 
   // Transformer les assignments pour le formulaire
   type MemberDoc = { id: number; firstName: string; lastName: string }
+  type GroupRef = { id: number } | number
   const assignments = plan.assignments
-    ? (plan.assignments as Array<{ role: string; members: MemberDoc[] | number[] | null }>).map(
-        (a) => ({
-          role: a.role,
-          memberIds: Array.isArray(a.members)
-            ? a.members.map((m) => (typeof m === 'object' ? m.id : m))
-            : [],
-        }),
-      )
+    ? (
+        plan.assignments as Array<{
+          role: string
+          members: MemberDoc[] | number[] | null
+          group?: GroupRef | null
+        }>
+      ).map((a) => ({
+        role: a.role,
+        memberIds: Array.isArray(a.members)
+          ? a.members.map((m) => (typeof m === 'object' ? m.id : m))
+          : [],
+        groupId: a.group ? (typeof a.group === 'object' ? a.group.id : a.group) : null,
+      }))
     : []
 
   return (
@@ -97,6 +122,7 @@ export default async function EditPlanPage({
         mode="edit"
         churchId={tenant.id}
         members={members}
+        groups={groups}
         serviceRoles={serviceRoles}
         defaultValues={{
           id: plan.id,

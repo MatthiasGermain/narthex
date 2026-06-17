@@ -16,6 +16,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { EventActions } from '@/components/features/events/event-actions'
+import {
+  BulkSelectProvider,
+  BulkCheckbox,
+  BulkSelectAll,
+  BulkActionBar,
+} from '@/components/features/bulk-select'
 
 function isPast(dateStr: string): boolean {
   const today = new Date()
@@ -66,7 +72,12 @@ export default async function EventsPage() {
   const upcoming = events.filter((e) => !isPast(e.date))
   const past = events.filter((e) => isPast(e.date)).reverse()
 
+  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const upcomingIds = upcoming.map((e) => e.id)
+  const pastIds = past.map((e) => e.id)
+
   return (
+    <BulkSelectProvider>
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Événements</h1>
@@ -100,8 +111,18 @@ export default async function EventsPage() {
                 {upcoming.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4"
+                    className="relative flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4"
                   >
+                    <Link
+                      href={`/dashboard/events/${event.id}/edit`}
+                      className="absolute inset-0"
+                      aria-label={`Ouvrir ${event.title}`}
+                    />
+                    {isAdmin && (
+                      <div className="relative z-10 pt-0.5">
+                        <BulkCheckbox id={event.id} label={`Sélectionner ${event.title}`} />
+                      </div>
+                    )}
                     {getThumbUrl(event.image) && (
                       <Image
                         src={getThumbUrl(event.image)!}
@@ -126,11 +147,13 @@ export default async function EventsPage() {
                         {event.visibility === 'public' ? 'Public' : 'Interne'}
                       </Badge>
                     </div>
-                    <EventActions
-                      eventId={event.id}
-                      eventTitle={event.title}
-                      canDelete={canUserDelete(event, user.id, user.role)}
-                    />
+                    <div className="relative z-10">
+                      <EventActions
+                        eventId={event.id}
+                        eventTitle={event.title}
+                        canDelete={canUserDelete(event, user.id, user.role)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -142,8 +165,18 @@ export default async function EventsPage() {
                 {past.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4 opacity-60"
+                    className="relative flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4 opacity-60"
                   >
+                    <Link
+                      href={`/dashboard/events/${event.id}/edit`}
+                      className="absolute inset-0"
+                      aria-label={`Ouvrir ${event.title}`}
+                    />
+                    {isAdmin && (
+                      <div className="relative z-10 pt-0.5">
+                        <BulkCheckbox id={event.id} label={`Sélectionner ${event.title}`} />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{event.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -153,11 +186,13 @@ export default async function EventsPage() {
                         <p className="text-sm text-muted-foreground">{getLocationLabel(event)}</p>
                       )}
                     </div>
-                    <EventActions
-                      eventId={event.id}
-                      eventTitle={event.title}
-                      canDelete={canUserDelete(event, user.id, user.role)}
-                    />
+                    <div className="relative z-10">
+                      <EventActions
+                        eventId={event.id}
+                        eventTitle={event.title}
+                        canDelete={canUserDelete(event, user.id, user.role)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -173,6 +208,11 @@ export default async function EventsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-raisin/8">
+                        {isAdmin && (
+                          <TableHead className="w-10">
+                            <BulkSelectAll ids={upcomingIds} label="Tout sélectionner (à venir)" />
+                          </TableHead>
+                        )}
                         <TableHead className="w-10"></TableHead>
                         <TableHead className="w-[28%]">Titre</TableHead>
                         <TableHead className="w-[23%]">Date</TableHead>
@@ -184,8 +224,18 @@ export default async function EventsPage() {
                     </TableHeader>
                     <TableBody>
                       {upcoming.map((event) => (
-                        <TableRow key={event.id} className="hover:bg-raisin/5">
+                        <TableRow key={event.id} className="relative cursor-pointer hover:bg-raisin/5">
+                          {isAdmin && (
+                            <TableCell className="relative z-10 w-px">
+                              <BulkCheckbox id={event.id} label={`Sélectionner ${event.title}`} />
+                            </TableCell>
+                          )}
                           <TableCell>
+                            <Link
+                              href={`/dashboard/events/${event.id}/edit`}
+                              className="absolute inset-0"
+                              aria-label={`Ouvrir ${event.title}`}
+                            />
                             {getThumbUrl(event.image) ? (
                               <Image
                                 src={getThumbUrl(event.image)!}
@@ -207,7 +257,7 @@ export default async function EventsPage() {
                               {event.visibility === 'public' ? 'Public' : 'Interne'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="relative z-10 w-px">
                             <EventActions
                               eventId={event.id}
                               eventTitle={event.title}
@@ -229,6 +279,11 @@ export default async function EventsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-raisin/8">
+                        {isAdmin && (
+                          <TableHead className="w-10">
+                            <BulkSelectAll ids={pastIds} label="Tout sélectionner (passés)" />
+                          </TableHead>
+                        )}
                         <TableHead className="w-10"></TableHead>
                         <TableHead className="w-[28%]">Titre</TableHead>
                         <TableHead className="w-[23%]">Date</TableHead>
@@ -240,8 +295,18 @@ export default async function EventsPage() {
                     </TableHeader>
                     <TableBody>
                       {past.map((event) => (
-                        <TableRow key={event.id} className="hover:bg-raisin/5">
+                        <TableRow key={event.id} className="relative cursor-pointer hover:bg-raisin/5">
+                          {isAdmin && (
+                            <TableCell className="relative z-10 w-px">
+                              <BulkCheckbox id={event.id} label={`Sélectionner ${event.title}`} />
+                            </TableCell>
+                          )}
                           <TableCell>
+                            <Link
+                              href={`/dashboard/events/${event.id}/edit`}
+                              className="absolute inset-0"
+                              aria-label={`Ouvrir ${event.title}`}
+                            />
                             {getThumbUrl(event.image) ? (
                               <Image
                                 src={getThumbUrl(event.image)!}
@@ -263,7 +328,7 @@ export default async function EventsPage() {
                               {event.visibility === 'public' ? 'Public' : 'Interne'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="relative z-10 w-px">
                             <EventActions
                               eventId={event.id}
                               eventTitle={event.title}
@@ -281,5 +346,7 @@ export default async function EventsPage() {
         </>
       )}
     </div>
+    {isAdmin && <BulkActionBar collection="events" noun={{ one: 'événement', many: 'événements' }} />}
+    </BulkSelectProvider>
   )
 }

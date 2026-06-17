@@ -497,6 +497,10 @@ export interface ServicePlan {
          */
         role: string;
         members?: (number | Member)[] | null;
+        /**
+         * Pour les rôles servis par un groupe entier (ex : Louange)
+         */
+        group?: (number | null) | Group;
         id?: string | null;
       }[]
     | null;
@@ -512,6 +516,21 @@ export interface ServicePlan {
    * Auto-assigné à votre église
    */
   church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "groups".
+ */
+export interface Group {
+  id: number;
+  name: string;
+  description?: string | null;
+  members?: (number | Member)[] | null;
+  leader?: (number | null) | Member;
+  createdBy?: (number | null) | User;
+  church: number | Church;
   updatedAt: string;
   createdAt: string;
 }
@@ -568,21 +587,6 @@ export interface Invitation {
   role: 'volunteer' | 'admin-church';
   firstName?: string | null;
   lastName?: string | null;
-  church: number | Church;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "groups".
- */
-export interface Group {
-  id: number;
-  name: string;
-  description?: string | null;
-  members?: (number | Member)[] | null;
-  leader?: (number | null) | Member;
-  createdBy?: (number | null) | User;
   church: number | Church;
   updatedAt: string;
   createdAt: string;
@@ -967,6 +971,7 @@ export interface ServicePlansSelect<T extends boolean = true> {
     | {
         role?: T;
         members?: T;
+        group?: T;
         id?: T;
       };
   notes?: T;

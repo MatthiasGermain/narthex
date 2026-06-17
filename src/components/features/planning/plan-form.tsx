@@ -22,9 +22,16 @@ interface MemberOption {
   lastName: string
 }
 
+interface GroupOption {
+  id: number
+  name: string
+  leaderName: string | null
+}
+
 interface AssignmentData {
   role: string
   memberIds: number[]
+  groupId?: number | null
 }
 
 interface PlanData {
@@ -39,10 +46,23 @@ interface PlanFormProps {
   defaultValues?: PlanData
   churchId: number
   members: MemberOption[]
+  groups?: GroupOption[]
   serviceRoles: string[]
 }
 
-export function PlanForm({ mode, defaultValues, churchId, members, serviceRoles }: PlanFormProps) {
+/** Le rôle « Louange » accepte la sélection d'un groupe entier. */
+function isWorshipRole(role: string): boolean {
+  return role.trim().toLowerCase() === 'louange'
+}
+
+export function PlanForm({
+  mode,
+  defaultValues,
+  churchId,
+  members,
+  groups = [],
+  serviceRoles,
+}: PlanFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -76,8 +96,12 @@ export function PlanForm({ mode, defaultValues, churchId, members, serviceRoles 
     )
   }
 
+  function setAssignmentGroup(index: number, groupId: number | null) {
+    setAssignments((prev) => prev.map((a, i) => (i === index ? { ...a, groupId } : a)))
+  }
+
   function addAssignment() {
-    setAssignments((prev) => [...prev, { role: '', memberIds: [] }])
+    setAssignments((prev) => [...prev, { role: '', memberIds: [], groupId: null }])
   }
 
   function removeAssignment(index: number) {
@@ -95,6 +119,11 @@ export function PlanForm({ mode, defaultValues, churchId, members, serviceRoles 
   function getMemberName(id: number): string {
     const m = members.find((m) => m.id === id)
     return m ? `${m.firstName} ${m.lastName}` : `#${id}`
+  }
+
+  function getGroup(id: number | null | undefined): GroupOption | undefined {
+    if (id == null) return undefined
+    return groups.find((g) => g.id === id)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -116,6 +145,8 @@ export function PlanForm({ mode, defaultValues, churchId, members, serviceRoles 
           .map((a) => ({
             role: a.role.trim(),
             members: a.memberIds.length > 0 ? a.memberIds : null,
+            // Le groupe n'est pertinent que pour le rôle Louange
+            group: isWorshipRole(a.role) && a.groupId != null ? a.groupId : null,
           })),
         notes: notes.trim() || undefined,
         church: churchId,
@@ -221,6 +252,63 @@ export function PlanForm({ mode, defaultValues, churchId, members, serviceRoles 
                     )}
                   </PopoverContent>
                 </Popover>
+
+                {/* Groupe assigné (rôle Louange uniquement) */}
+                {isWorshipRole(assignment.role) && (
+                  <>
+                    {assignment.groupId != null &&
+                      (() => {
+                        const g = getGroup(assignment.groupId)
+                        return g ? (
+                          <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary">
+                            {g.name}
+                            {g.leaderName ? ` — ${g.leaderName}` : ''}
+                            <button
+                              type="button"
+                              onClick={() => setAssignmentGroup(index, null)}
+                              className="ml-0.5 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ) : null
+                      })()}
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button type="button" variant="outline" size="sm" className="h-7 text-xs">
+                          <Plus className="h-3 w-3 mr-1" />
+                          Groupe
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 max-h-60 overflow-y-auto p-2" align="start">
+                        {groups.length === 0 ? (
+                          <p className="text-sm text-muted-foreground p-2">Aucun groupe</p>
+                        ) : (
+                          groups.map((g) => (
+                            <label
+                              key={g.id}
+                              className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted cursor-pointer"
+                            >
+                              <Checkbox
+                                checked={assignment.groupId === g.id}
+                                onCheckedChange={() =>
+                                  setAssignmentGroup(index, assignment.groupId === g.id ? null : g.id)
+                                }
+                              />
+                              <span className="text-sm">
+                                {g.name}
+                                {g.leaderName && (
+                                  <span className="text-muted-foreground"> — {g.leaderName}</span>
+                                )}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  </>
+                )}
               </div>
 
               {/* Supprimer le rôle */}
