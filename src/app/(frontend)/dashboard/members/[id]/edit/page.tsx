@@ -53,7 +53,6 @@ export default async function EditMemberPage({
     birthDate: member.birthDate
       ? new Date(member.birthDate).toISOString().split('T')[0]
       : '',
-    isActive: member.isActive ?? true,
     photo: member.photo as
       | number
       | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } } }

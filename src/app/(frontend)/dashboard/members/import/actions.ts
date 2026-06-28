@@ -64,7 +64,6 @@ export async function importMembers(rows: ImportRow[]): Promise<ImportResult[]> 
           email: row.email || undefined,
           phone: row.phone || undefined,
           churchRole: (row.churchRole || 'membre') as 'pasteur' | 'diacre' | 'ancien' | 'responsable' | 'membre' | 'visiteur',
-          isActive: true,
           church: tenant.id,
         },
         user,

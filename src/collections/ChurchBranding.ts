@@ -1,5 +1,11 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin, readOwnChurch } from '../access'
+import { cacheTags, safeRevalidateTag } from '../lib/cache'
+
+function revalidateBranding(doc: { church?: number | { id: number } | null }) {
+  const churchId = typeof doc?.church === 'object' ? doc.church?.id : doc?.church
+  if (churchId != null) safeRevalidateTag(cacheTags.branding(churchId))
+}
 
 const validateHexColor = (value: string | null | undefined) => {
   if (!value) return true
@@ -19,6 +25,10 @@ export const ChurchBranding: CollectionConfig = {
     create: isAdmin,
     update: isAdmin,
     delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [({ doc }) => revalidateBranding(doc)],
+    afterDelete: [({ doc }) => revalidateBranding(doc)],
   },
   fields: [
     {

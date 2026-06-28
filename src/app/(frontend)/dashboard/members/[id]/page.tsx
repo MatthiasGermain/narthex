@@ -4,14 +4,12 @@ import Image from 'next/image'
 import { ArrowLeft, Mail, Phone, Calendar, Clock, ShieldCheck, Pencil, Users } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
 import { CHURCH_ROLE_LABELS } from '@/lib/church-roles'
 import { formatRelativeTime } from '@/lib/relative-time'
+import { getInitials } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
-}
 
 function formatBirthDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', {
@@ -50,7 +48,7 @@ export default async function MemberProfilePage({
     typeof member.church === 'object' ? (member.church as { id: number })?.id : member.church
   if (String(memberChurchId) !== String(tenant.id)) notFound()
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
 
   const linkedUser = member.user && typeof member.user === 'object'
     ? member.user as { id: number; role?: string; lastLogin?: string }
@@ -124,11 +122,6 @@ export default async function MemberProfilePage({
               <Badge variant="outline" className="bg-violet/15 text-violet border-violet/30">
                 <ShieldCheck className="h-3 w-3 mr-0.5" />
                 Admin
-              </Badge>
-            )}
-            {!member.isActive && (
-              <Badge variant="outline" className="bg-muted text-muted-foreground">
-                Inactif
               </Badge>
             )}
           </div>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { UsersRound, Plus, Crown } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GroupActions } from '@/components/features/groups/group-actions'
@@ -12,7 +13,7 @@ export default async function GroupsPage() {
   if (!user) return null
   if (!tenant) return null
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
 
   const { docs: groups } = await payload.find({
     collection: 'groups',

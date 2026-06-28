@@ -12,11 +12,12 @@ export default async function NewSermonPage() {
 
   const { docs: memberDocs } = await payload.find({
     collection: 'members',
-    where: { church: { equals: tenant.id }, isActive: { equals: true } },
+    where: { church: { equals: tenant.id } },
     sort: 'lastName',
     limit: 200,
     depth: 0,
-    overrideAccess: true,
+    overrideAccess: false,
+    user,
   })
 
   const members = memberDocs.map((m) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName }))

@@ -4,6 +4,7 @@ import { Plus, BookOpen } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
 import { formatDateShort } from '@/lib/format'
+import { canDeleteOwned } from '@/access'
 import { getThumbUrl } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,16 +23,6 @@ function getPreacherName(preacher: unknown): string | null {
   const p = preacher as { firstName?: string; lastName?: string }
   if (!p.firstName && !p.lastName) return null
   return [p.firstName, p.lastName].filter(Boolean).join(' ')
-}
-
-function canUserDelete(
-  sermon: { createdBy?: number | { id: number } | null },
-  userId: number,
-  userRole: string,
-): boolean {
-  if (userRole === 'super-admin' || userRole === 'admin-church') return true
-  const creatorId = typeof sermon.createdBy === 'object' ? sermon.createdBy?.id : sermon.createdBy
-  return creatorId === userId
 }
 
 export default async function SermonsPage() {
@@ -111,7 +102,7 @@ export default async function SermonsPage() {
                 <SermonActions
                   sermonId={sermon.id}
                   sermonTitle={sermon.title}
-                  canDelete={canUserDelete(sermon, user.id, user.role)}
+                  canDelete={canDeleteOwned(sermon, user.id, user.role)}
                 />
               </div>
             ))}
@@ -161,7 +152,7 @@ export default async function SermonsPage() {
                         <SermonActions
                           sermonId={sermon.id}
                           sermonTitle={sermon.title}
-                          canDelete={canUserDelete(sermon, user.id, user.role)}
+                          canDelete={canDeleteOwned(sermon, user.id, user.role)}
                         />
                       </TableCell>
                     </TableRow>

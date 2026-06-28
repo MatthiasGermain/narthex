@@ -133,7 +133,6 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
       lastName: lastName || firstName,
       email: doc.email as string,
       churchRole: 'membre',
-      isActive: true,
       user: doc.id,
       church: tenantId,
     },

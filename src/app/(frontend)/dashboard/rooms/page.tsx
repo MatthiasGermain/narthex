@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { DoorOpen, Plus, Users, Accessibility, Wifi, Music, Monitor, UtensilsCrossed, Presentation } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { canDeleteOwned } from '@/access'
 import { getThumbUrl } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,16 +16,6 @@ const EQUIPMENT_LABELS: Record<string, { label: string; icon: typeof Wifi }> = {
   wifi: { label: 'Wi-Fi', icon: Wifi },
   kitchen: { label: 'Cuisine', icon: UtensilsCrossed },
   board: { label: 'Tableau', icon: Monitor },
-}
-
-function canUserDelete(
-  room: { createdBy?: number | { id: number } | null },
-  userId: number,
-  userRole: string,
-): boolean {
-  if (userRole === 'super-admin' || userRole === 'admin-church') return true
-  const creatorId = typeof room.createdBy === 'object' ? room.createdBy?.id : room.createdBy
-  return creatorId === userId
 }
 
 export default async function RoomsPage() {
@@ -118,7 +109,7 @@ export default async function RoomsPage() {
                         <RoomActions
                           roomId={room.id}
                           roomName={room.name}
-                          canDelete={canUserDelete(room, user.id, user.role)}
+                          canDelete={canDeleteOwned(room, user.id, user.role)}
                         />
                       </div>
                       {room.equipment && room.equipment.length > 0 && (
@@ -168,7 +159,7 @@ export default async function RoomsPage() {
                         <RoomActions
                           roomId={room.id}
                           roomName={room.name}
-                          canDelete={canUserDelete(room, user.id, user.role)}
+                          canDelete={canDeleteOwned(room, user.id, user.role)}
                         />
                       </div>
                     </div>

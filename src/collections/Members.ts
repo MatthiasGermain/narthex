@@ -7,7 +7,7 @@ export const Members: CollectionConfig = {
   slug: 'members',
   admin: {
     useAsTitle: 'lastName',
-    defaultColumns: ['lastName', 'firstName', 'email', 'churchRole', 'isActive', 'church'],
+    defaultColumns: ['lastName', 'firstName', 'email', 'churchRole', 'church'],
   },
   hooks: {
     beforeChange: [assignCreatedBy],
@@ -78,12 +78,6 @@ export const Members: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       label: 'Photo',
-    },
-    {
-      name: 'isActive',
-      type: 'checkbox',
-      label: 'Membre actif',
-      defaultValue: true,
     },
     {
       name: 'user',

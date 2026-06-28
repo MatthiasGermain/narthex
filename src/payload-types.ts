@@ -185,6 +185,10 @@ export interface Church {
    * Domaine personnalisé pour ce tenant (ex: mon-eglise.fr)
    */
   domain?: string | null;
+  /**
+   * Lien public en lecture seule du planning. Généré/révoqué depuis le dashboard.
+   */
+  planningShareToken?: string | null;
   settings?: {
     enabledModules?: 'events'[] | null;
     /**
@@ -462,7 +466,6 @@ export interface Member {
   churchRole?: ('pasteur' | 'diacre' | 'ancien' | 'responsable' | 'membre' | 'visiteur') | null;
   birthDate?: string | null;
   photo?: (number | null) | Media;
-  isActive?: boolean | null;
   /**
    * Lier ce membre à un compte utilisateur Narthex (optionnel)
    */
@@ -809,6 +812,7 @@ export interface ChurchesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   domain?: T;
+  planningShareToken?: T;
   settings?:
     | T
     | {
@@ -953,7 +957,6 @@ export interface MembersSelect<T extends boolean = true> {
   churchRole?: T;
   birthDate?: T;
   photo?: T;
-  isActive?: T;
   user?: T;
   createdBy?: T;
   church?: T;

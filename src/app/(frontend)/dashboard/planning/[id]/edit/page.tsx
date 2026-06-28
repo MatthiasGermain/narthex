@@ -37,7 +37,7 @@ export default async function EditPlanPage({
       .catch(() => null),
     payload.find({
       collection: 'members',
-      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      where: { church: { equals: tenant.id } },
       sort: 'lastName',
       limit: 200,
       depth: 0,

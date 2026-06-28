@@ -25,7 +25,7 @@ export default async function NewPlanPage({ searchParams }: Props) {
   const [{ docs: memberDocs }, { docs: groupDocs }] = await Promise.all([
     payload.find({
       collection: 'members',
-      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      where: { church: { equals: tenant.id } },
       sort: 'lastName',
       limit: 200,
       depth: 0,

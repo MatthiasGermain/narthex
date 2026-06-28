@@ -2,9 +2,11 @@ import Link from 'next/link'
 import { Plus, Upload, UsersRound, Crown, MailPlus, Mail, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
 import { getThumbUrl } from '@/lib/image-utils'
 import { CHURCH_ROLE_LABELS } from '@/lib/church-roles'
 import { formatRelativeTime } from '@/lib/relative-time'
+import { formatDateNumeric } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MembersList } from '@/components/features/members/members-list'
@@ -40,21 +42,13 @@ const STATUS_CONFIG = {
   expired: { label: 'Expirée', icon: XCircle, className: 'bg-muted text-muted-foreground border-muted' },
 } as const
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 export default async function MembersPage() {
   const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
   if (!tenant) return null
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
 
   // Fetch en parallèle
   const [membersResult, groupsResult, invitationsResult] = await Promise.all([
@@ -102,7 +96,6 @@ export default async function MembersPage() {
       phone: member.phone ?? null,
       churchRole: member.churchRole ?? null,
       churchRoleLabel: member.churchRole ? (CHURCH_ROLE_LABELS[member.churchRole] || member.churchRole) : null,
-      isActive: member.isActive !== false,
       photoUrl: getThumbUrl(member.photo),
       hasAccount: Boolean(member.user),
       isAdminMember: linkedUser?.role === 'admin-church' || linkedUser?.role === 'super-admin',
@@ -263,7 +256,7 @@ export default async function MembersPage() {
                               <Badge variant="outline" className="text-xs">
                                 {inv.role === 'admin-church' ? 'Admin' : 'Bénévole'}
                               </Badge>
-                              <span className="text-xs text-muted-foreground">{formatDate(inv.createdAt)}</span>
+                              <span className="text-xs text-muted-foreground">{formatDateNumeric(inv.createdAt)}</span>
                             </div>
                             {invitedByEmail && <p className="text-xs text-muted-foreground mt-1">par {invitedByEmail}</p>}
                           </div>
@@ -301,7 +294,7 @@ export default async function MembersPage() {
                               <StatusIcon className="h-3 w-3 mr-1" />
                               {config.label}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">{formatDate(inv.createdAt)}</span>
+                            <span className="text-xs text-muted-foreground">{formatDateNumeric(inv.createdAt)}</span>
                           </div>
                         </div>
                       </div>

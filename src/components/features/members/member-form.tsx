@@ -28,7 +28,6 @@ interface MemberData {
   phone?: string
   churchRole?: string
   birthDate?: string
-  isActive?: boolean
   photo?: number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } } } | null
   user?: number | { id: number; email?: string } | null
 }
@@ -62,7 +61,6 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
   const [phone, setPhone] = useState(defaultValues?.phone ?? '')
   const [churchRole, setChurchRole] = useState(defaultValues?.churchRole ?? 'membre')
   const [birthDate, setBirthDate] = useState(defaultValues?.birthDate ?? '')
-  const [isActive, setIsActive] = useState(defaultValues?.isActive ?? true)
 
   const initialPhoto = getInitialPhoto(defaultValues?.photo)
   const [photoId, setPhotoId] = useState<number | null>(initialPhoto.id)
@@ -231,7 +229,6 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
         phone: phone.trim() || undefined,
         churchRole,
         birthDate: birthDate || undefined,
-        isActive,
         photo: photoId || '',
         user: userIdToLink || '',
         church: churchId,
@@ -410,15 +407,6 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
           }}
         />
       </div>
-
-      {/* Membre actif */}
-      <label className="flex items-center gap-2 cursor-pointer">
-        <Checkbox
-          checked={isActive}
-          onCheckedChange={(checked) => setIsActive(checked === true)}
-        />
-        <span className="text-sm">Membre actif</span>
-      </label>
 
       {/* Section Compte utilisateur (admin uniquement) */}
       {isAdminUser && (

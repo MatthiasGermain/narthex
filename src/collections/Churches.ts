@@ -1,6 +1,12 @@
 import type { CollectionConfig, CollectionBeforeValidateHook } from 'payload'
 import { isSuperAdmin, readOwnChurchById } from '../access'
 import { DEFAULT_SERVICE_ROLES } from '../lib/service-roles'
+import { cacheTags, safeRevalidateTag } from '../lib/cache'
+
+function revalidateChurch(doc?: { slug?: string | null; domain?: string | null } | null) {
+  if (doc?.slug) safeRevalidateTag(cacheTags.churchSlug(doc.slug))
+  if (doc?.domain) safeRevalidateTag(cacheTags.churchDomain(doc.domain))
+}
 
 function slugify(text: string): string {
   return text
@@ -25,6 +31,16 @@ export const Churches: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [generateSlug],
+    afterChange: [
+      ({ doc, previousDoc }) => {
+        revalidateChurch(doc)
+        // Si le slug/domaine a changé, invalider aussi l'ancien
+        if (previousDoc && (previousDoc.slug !== doc?.slug || previousDoc.domain !== doc?.domain)) {
+          revalidateChurch(previousDoc)
+        }
+      },
+    ],
+    afterDelete: [({ doc }) => revalidateChurch(doc)],
   },
   access: {
     read: readOwnChurchById,
@@ -56,6 +72,16 @@ export const Churches: CollectionConfig = {
       label: 'Domaine',
       admin: {
         description: 'Domaine personnalisé pour ce tenant (ex: mon-eglise.fr)',
+      },
+    },
+    {
+      name: 'planningShareToken',
+      type: 'text',
+      index: true,
+      label: 'Token de partage du planning',
+      admin: {
+        readOnly: true,
+        description: 'Lien public en lecture seule du planning. Généré/révoqué depuis le dashboard.',
       },
     },
     {

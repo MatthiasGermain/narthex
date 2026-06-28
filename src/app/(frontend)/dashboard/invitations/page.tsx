@@ -1,6 +1,8 @@
 import { MailPlus, Mail, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
+import { formatDateNumeric } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
 import { InviteForm } from '@/components/features/invitations/invite-form'
 import { InvitationActions } from '@/components/features/invitations/invitation-actions'
@@ -11,21 +13,13 @@ const STATUS_CONFIG = {
   expired: { label: 'Expirée', icon: XCircle, className: 'bg-muted text-muted-foreground border-muted' },
 } as const
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 export default async function InvitationsPage() {
   const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
   if (!tenant) return null
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
   if (!isAdmin) return null
 
   const { docs: invitations } = await payload.find({
@@ -142,7 +136,7 @@ function InvitationCard({ invitation }: { invitation: {
                 {invitation.role === 'admin-church' ? 'Admin' : 'Bénévole'}
               </Badge>
               <span className="text-xs text-muted-foreground">
-                {formatDate(invitation.createdAt)}
+                {formatDateNumeric(invitation.createdAt)}
               </span>
             </div>
             {invitedByEmail && (

@@ -20,7 +20,8 @@ export default async function NewEventPage({ searchParams }: Props) {
     sort: 'name',
     limit: 100,
     depth: 0,
-    overrideAccess: true,
+    overrideAccess: false,
+    user,
   })
 
   const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))

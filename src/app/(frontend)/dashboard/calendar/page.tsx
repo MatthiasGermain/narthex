@@ -1,4 +1,5 @@
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
 import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
 import { CalendarGrid } from '@/components/dashboard/calendar-grid'
 import type { TimelineItem } from '@/components/dashboard/monthly-timeline'
@@ -11,7 +12,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   const { payload, user, tenant } = await resolveTenant()
   if (!user || !tenant) return null
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
 
   // Mois demandé (ou mois courant)
   const params = await searchParams
@@ -60,7 +61,8 @@ export default async function CalendarPage({ searchParams }: Props) {
       },
       sort: 'date',
       limit: 31,
-      depth: 2,
+      // depth 0 suffit : on ne compte que les rôles assignés, sans afficher de noms
+      depth: 0,
       overrideAccess: false,
       user,
     }),

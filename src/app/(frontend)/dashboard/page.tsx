@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Calendar, DoorOpen, Users } from 'lucide-react'
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
 import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
 import { MonthlyTimeline, type TimelineItem } from '@/components/dashboard/monthly-timeline'
 import { ThisSunday } from '@/components/dashboard/this-sunday'
@@ -13,7 +14,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   const { payload, user, tenant } = await resolveTenant()
   if (!user || !tenant) return null
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
 
   // Mois demandé (ou mois courant)
   const params = await searchParams
@@ -114,7 +115,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         }),
         payload.find({
           collection: 'members',
-          where: { church: { equals: tenant.id }, isActive: { equals: true } },
+          where: { church: { equals: tenant.id } },
           limit: 0, depth: 0, overrideAccess: false, user,
         }),
       ]

@@ -13,9 +13,28 @@ export const isSuperAdmin: Access = ({ req: { user } }) => {
   return isSuperAdminCheck(user)
 }
 
-export const isAdmin: Access = ({ req: { user } }) => {
+/** Plain boolean check — pour les pages/composants (pas le contrôle d'accès Payload) */
+export function isAdminRole(user: unknown): boolean {
   const role = (user as UserWithRole)?.role
   return role === 'super-admin' || role === 'admin-church'
+}
+
+export const isAdmin: Access = ({ req: { user } }) => {
+  return isAdminRole(user)
+}
+
+/**
+ * Un utilisateur peut-il supprimer un document possédé ?
+ * Les admins peuvent tout supprimer ; sinon seul le créateur le peut.
+ */
+export function canDeleteOwned(
+  doc: { createdBy?: number | { id: number } | null },
+  userId: number,
+  userRole: string,
+): boolean {
+  if (userRole === 'super-admin' || userRole === 'admin-church') return true
+  const creatorId = typeof doc.createdBy === 'object' ? doc.createdBy?.id : doc.createdBy
+  return creatorId === userId
 }
 
 export const isAuthenticated: Access = ({ req: { user } }) => {

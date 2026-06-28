@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Plus, ClipboardList } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
-import { formatDate } from '@/lib/format'
+import { isAdminRole } from '@/access'
+import { formatDate, isPast } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,79 +15,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { PlanActions } from '@/components/features/planning/plan-actions'
+import { PlanningShare } from '@/components/features/planning/planning-share'
+import { Assignments, type Assignment, type ViewMode } from '@/components/features/planning/assignments'
 import {
   BulkSelectProvider,
   BulkCheckbox,
   BulkSelectAll,
   BulkActionBar,
 } from '@/components/features/bulk-select'
-
-function isPast(dateStr: string): boolean {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return new Date(dateStr) < today
-}
-
-type MemberDoc = { id: number; firstName: string; lastName: string }
-type GroupDoc = { id: number; name: string; leader?: MemberDoc | number | null }
-type Assignment = {
-  role: string
-  members: MemberDoc[] | number[] | null
-  group?: GroupDoc | number | null
-}
-type ViewMode = 'compact' | 'detailed'
-
-function isFilled(a: Assignment): boolean {
-  return (Array.isArray(a.members) && a.members.length > 0) || a.group != null
-}
-
-function summarizeAssignments(assignments: Assignment[] | undefined): string {
-  if (!assignments || assignments.length === 0) return '—'
-  const filled = assignments.filter(isFilled).length
-  return `${filled} / ${assignments.length} rôles assignés`
-}
-
-function getAssignmentDetails(assignments: Assignment[] | undefined) {
-  return (assignments ?? []).map((a) => {
-    const group = a.group && typeof a.group === 'object' ? a.group : null
-    const leader = group?.leader && typeof group.leader === 'object' ? group.leader : null
-    const names = Array.isArray(a.members)
-      ? a.members
-          .filter((m): m is MemberDoc => typeof m === 'object' && m !== null)
-          .map((m) => `${m.firstName} ${m.lastName}`)
-      : []
-    const groupLabel = group
-      ? `${group.name} (groupe${leader ? ` · ${leader.firstName} ${leader.lastName}` : ''})`
-      : null
-    return { role: a.role, names, groupLabel }
-  })
-}
-
-/** Rendu des affectations selon la vue choisie (compact = résumé, détaillé = rôle → personnes). */
-function Assignments({ assignments, view }: { assignments: Assignment[] | undefined; view: ViewMode }) {
-  if (view !== 'detailed') {
-    return <span className="text-sm text-muted-foreground">{summarizeAssignments(assignments)}</span>
-  }
-  const details = getAssignmentDetails(assignments)
-  if (details.length === 0) return <span className="text-sm text-muted-foreground">—</span>
-  return (
-    <div className="flex flex-col gap-0.5">
-      {details.map((d, i) => {
-        const parts = [d.groupLabel, ...d.names].filter(Boolean) as string[]
-        return (
-          <div key={i} className="flex flex-wrap gap-x-1.5 text-sm">
-            <span className="font-medium text-foreground">{d.role} :</span>
-            <span
-              className={parts.length ? 'text-muted-foreground' : 'italic text-muted-foreground/50'}
-            >
-              {parts.length ? parts.join(', ') : 'non assigné'}
-            </span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 interface Props {
   searchParams: Promise<{ view?: string }>
@@ -101,7 +37,9 @@ export default async function PlanningPage({ searchParams }: Props) {
   const { view: viewParam } = await searchParams
   const view: ViewMode = viewParam === 'detailed' ? 'detailed' : 'compact'
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
+  const shareToken =
+    (tenant as { planningShareToken?: string | null }).planningShareToken ?? null
 
   const { docs: plans } = await payload.find({
     collection: 'service-plans',
@@ -150,6 +88,7 @@ export default async function PlanningPage({ searchParams }: Props) {
               </Link>
             </div>
           )}
+          {isAdmin && <PlanningShare token={shareToken} />}
           {isAdmin && (
             <Link href="/dashboard/planning/new">
               <Button size="sm">
@@ -276,8 +215,8 @@ export default async function PlanningPage({ searchParams }: Props) {
                             <BulkSelectAll ids={upcomingIds} label="Tout sélectionner (à venir)" />
                           </TableHead>
                         )}
-                        <TableHead className="w-[35%]">Date</TableHead>
-                        <TableHead className="w-[45%]">Affectations</TableHead>
+                        <TableHead className="w-[18%]">Date</TableHead>
+                        <TableHead className="w-[72%]">Affectations</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -331,8 +270,8 @@ export default async function PlanningPage({ searchParams }: Props) {
                             <BulkSelectAll ids={pastIds} label="Tout sélectionner (passés)" />
                           </TableHead>
                         )}
-                        <TableHead className="w-[35%]">Date</TableHead>
-                        <TableHead className="w-[45%]">Affectations</TableHead>
+                        <TableHead className="w-[18%]">Date</TableHead>
+                        <TableHead className="w-[72%]">Affectations</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>

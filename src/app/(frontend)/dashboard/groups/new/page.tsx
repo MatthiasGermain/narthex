@@ -15,7 +15,6 @@ export default async function NewGroupPage() {
     collection: 'members',
     where: {
       church: { equals: tenant.id },
-      isActive: { equals: true },
     },
     sort: 'lastName',
     limit: 200,

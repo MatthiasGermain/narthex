@@ -39,7 +39,6 @@ export default async function EditGroupPage({
     collection: 'members',
     where: {
       church: { equals: tenant.id },
-      isActive: { equals: true },
     },
     sort: 'lastName',
     limit: 200,

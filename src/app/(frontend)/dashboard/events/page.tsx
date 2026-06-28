@@ -3,7 +3,8 @@ import Image from 'next/image'
 import { CalendarPlus, CalendarX } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
-import { formatDateShort, formatTime } from '@/lib/format'
+import { formatDateShort, formatTime, isPast } from '@/lib/format'
+import { canDeleteOwned, isAdminRole } from '@/access'
 import { getThumbUrl } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,12 +24,6 @@ import {
   BulkActionBar,
 } from '@/components/features/bulk-select'
 
-function isPast(dateStr: string): boolean {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return new Date(dateStr) < today
-}
-
 function getRoomName(room: unknown): string | null {
   if (!room || typeof room !== 'object') return null
   return (room as { name?: string }).name || null
@@ -41,15 +36,6 @@ function getLocationLabel(event: { room?: unknown; location?: string | null }): 
   return event.location || ''
 }
 
-function canUserDelete(
-  event: { createdBy?: number | { id: number } | null },
-  userId: number,
-  userRole: string,
-): boolean {
-  if (userRole === 'super-admin' || userRole === 'admin-church') return true
-  const creatorId = typeof event.createdBy === 'object' ? event.createdBy?.id : event.createdBy
-  return creatorId === userId
-}
 
 export default async function EventsPage() {
   const { payload, user, tenant } = await resolveTenant()
@@ -72,7 +58,7 @@ export default async function EventsPage() {
   const upcoming = events.filter((e) => !isPast(e.date))
   const past = events.filter((e) => isPast(e.date)).reverse()
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
   const upcomingIds = upcoming.map((e) => e.id)
   const pastIds = past.map((e) => e.id)
 
@@ -151,7 +137,7 @@ export default async function EventsPage() {
                       <EventActions
                         eventId={event.id}
                         eventTitle={event.title}
-                        canDelete={canUserDelete(event, user.id, user.role)}
+                        canDelete={canDeleteOwned(event, user.id, user.role)}
                       />
                     </div>
                   </div>
@@ -190,7 +176,7 @@ export default async function EventsPage() {
                       <EventActions
                         eventId={event.id}
                         eventTitle={event.title}
-                        canDelete={canUserDelete(event, user.id, user.role)}
+                        canDelete={canDeleteOwned(event, user.id, user.role)}
                       />
                     </div>
                   </div>
@@ -261,7 +247,7 @@ export default async function EventsPage() {
                             <EventActions
                               eventId={event.id}
                               eventTitle={event.title}
-                              canDelete={canUserDelete(event, user.id, user.role)}
+                              canDelete={canDeleteOwned(event, user.id, user.role)}
                             />
                           </TableCell>
                         </TableRow>
@@ -332,7 +318,7 @@ export default async function EventsPage() {
                             <EventActions
                               eventId={event.id}
                               eventTitle={event.title}
-                              canDelete={canUserDelete(event, user.id, user.role)}
+                              canDelete={canDeleteOwned(event, user.id, user.role)}
                             />
                           </TableCell>
                         </TableRow>

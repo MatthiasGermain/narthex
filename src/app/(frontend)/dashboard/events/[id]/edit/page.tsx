@@ -33,7 +33,8 @@ export default async function EditEventPage({
       sort: 'name',
       limit: 100,
       depth: 0,
-      overrideAccess: true,
+      overrideAccess: false,
+      user,
     }),
   ])
 

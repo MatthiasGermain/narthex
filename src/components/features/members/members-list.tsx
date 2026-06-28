@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { CHURCH_ROLE_OPTIONS } from '@/lib/church-roles'
+import { getInitials } from '@/lib/format'
 import { MemberActions } from '@/components/features/members/member-actions'
 
 export interface SerializedMember {
@@ -24,7 +25,6 @@ export interface SerializedMember {
   phone: string | null
   churchRole: string | null
   churchRoleLabel: string | null
-  isActive: boolean
   photoUrl: string | null
   hasAccount: boolean
   isAdminMember: boolean
@@ -36,14 +36,9 @@ interface MembersListProps {
   isAdmin: boolean
 }
 
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
-}
-
 export function MembersList({ members, isAdmin }: MembersListProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
 
   const filtered = members.filter((m) => {
     const matchesSearch =
@@ -51,16 +46,8 @@ export function MembersList({ members, isAdmin }: MembersListProps) {
       `${m.firstName} ${m.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (m.email?.toLowerCase().includes(searchQuery.toLowerCase()))
     const matchesRole = roleFilter === 'all' || m.churchRole === roleFilter
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'active' && m.isActive) ||
-      (statusFilter === 'inactive' && !m.isActive)
-    return matchesSearch && matchesRole && matchesStatus
+    return matchesSearch && matchesRole
   })
-
-  const active = filtered.filter((m) => m.isActive)
-  const inactive = filtered.filter((m) => !m.isActive)
-  const showGroups = statusFilter === 'all'
 
   return (
     <>
@@ -88,16 +75,6 @@ export function MembersList({ members, isAdmin }: MembersListProps) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="Statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous</SelectItem>
-            <SelectItem value="active">Actifs</SelectItem>
-            <SelectItem value="inactive">Inactifs</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Résultats */}
@@ -118,32 +95,11 @@ export function MembersList({ members, isAdmin }: MembersListProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {showGroups ? (
-            <>
-              {active.length > 0 && (
-                <MemberGroup
-                  title={`Actifs (${active.length})`}
-                  members={active}
-                  isAdmin={isAdmin}
-                />
-              )}
-              {inactive.length > 0 && (
-                <MemberGroup
-                  title={`Inactifs (${inactive.length})`}
-                  members={inactive}
-                  isAdmin={isAdmin}
-                  dimmed
-                />
-              )}
-            </>
-          ) : (
-            <MemberGroup
-              title={`${filtered.length} membre${filtered.length > 1 ? 's' : ''}`}
-              members={filtered}
-              isAdmin={isAdmin}
-              dimmed={statusFilter === 'inactive'}
-            />
-          )}
+          <MemberGroup
+            title={`${filtered.length} membre${filtered.length > 1 ? 's' : ''}`}
+            members={filtered}
+            isAdmin={isAdmin}
+          />
         </div>
       )}
     </>
@@ -154,12 +110,10 @@ function MemberGroup({
   title,
   members,
   isAdmin,
-  dimmed,
 }: {
   title: string
   members: SerializedMember[]
   isAdmin: boolean
-  dimmed?: boolean
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -168,7 +122,7 @@ function MemberGroup({
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {members.map((member) => (
-          <MemberCard key={member.id} member={member} isAdmin={isAdmin} dimmed={dimmed} />
+          <MemberCard key={member.id} member={member} isAdmin={isAdmin} />
         ))}
       </div>
     </div>
@@ -178,17 +132,13 @@ function MemberGroup({
 function MemberCard({
   member,
   isAdmin,
-  dimmed,
 }: {
   member: SerializedMember
   isAdmin: boolean
-  dimmed?: boolean
 }) {
   return (
-    <Link href={`/dashboard/members/${member.id}`}>
-      <div
-        className={`rounded-lg border border-raisin/8 bg-raisin/5 overflow-hidden hover:shadow-md transition-shadow ${dimmed ? 'opacity-60' : ''}`}
-      >
+    <Link href={`/dashboard/members/${member.id}`} className="block h-full">
+      <div className="h-full rounded-lg border border-raisin/8 bg-raisin/5 overflow-hidden hover:shadow-md transition-shadow">
         <div className="p-4">
           <div className="flex items-start gap-3">
             {member.photoUrl ? (

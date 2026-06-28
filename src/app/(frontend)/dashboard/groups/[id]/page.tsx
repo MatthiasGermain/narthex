@@ -4,12 +4,10 @@ import Image from 'next/image'
 import { ArrowLeft, Pencil, Crown } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { isAdminRole } from '@/access'
+import { getInitials } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
-}
 
 export default async function GroupDetailPage({
   params,
@@ -39,7 +37,7 @@ export default async function GroupDetailPage({
     typeof group.church === 'object' ? (group.church as { id: number })?.id : group.church
   if (String(groupChurchId) !== String(tenant.id)) notFound()
 
-  const isAdmin = user.role === 'super-admin' || user.role === 'admin-church'
+  const isAdmin = isAdminRole(user)
 
   const members = (Array.isArray(group.members) ? group.members : []) as Array<{
     id: number

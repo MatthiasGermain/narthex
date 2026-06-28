@@ -1,5 +1,11 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access'
+import { cacheTags, safeRevalidateTag } from '../lib/cache'
+
+function revalidateProfile(doc: { church?: number | { id: number } | null }) {
+  const churchId = typeof doc?.church === 'object' ? doc.church?.id : doc?.church
+  if (churchId != null) safeRevalidateTag(cacheTags.profile(churchId))
+}
 
 export const ChurchProfiles: CollectionConfig = {
   slug: 'church-profiles',
@@ -13,6 +19,10 @@ export const ChurchProfiles: CollectionConfig = {
     create: isAdmin,
     update: isAdmin,
     delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [({ doc }) => revalidateProfile(doc)],
+    afterDelete: [({ doc }) => revalidateProfile(doc)],
   },
   fields: [
     {

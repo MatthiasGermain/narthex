@@ -29,11 +29,12 @@ export default async function EditSermonPage({
     }).catch(() => null),
     payload.find({
       collection: 'members',
-      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      where: { church: { equals: tenant.id } },
       sort: 'lastName',
       limit: 200,
       depth: 0,
-      overrideAccess: true,
+      overrideAccess: false,
+      user,
     }),
   ])
 
