@@ -40,6 +40,16 @@ export const Events: CollectionConfig = {
       label: 'Titre',
     },
     {
+      name: 'gathering',
+      type: 'relationship',
+      relationTo: 'gatherings',
+      index: true,
+      label: 'Fait partie de',
+      admin: {
+        description: 'Rattacher à un rassemblement (week-end d’église, convention…). Optionnel.',
+      },
+    },
+    {
       type: 'row',
       fields: [
         {

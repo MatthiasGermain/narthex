@@ -20,12 +20,30 @@ export const ServicePlans: CollectionConfig = {
   },
   fields: [
     {
+      name: 'title',
+      type: 'text',
+      label: 'Nom du culte',
+      admin: {
+        description: 'Optionnel. Ex : Culte de Noël, Baptêmes, Sainte Cène. Vide = « Culte ».',
+      },
+    },
+    {
       name: 'date',
       type: 'date',
       required: true,
       label: 'Date du culte',
       admin: {
         date: { pickerAppearance: 'dayOnly', displayFormat: 'dd/MM/yyyy' },
+      },
+    },
+    {
+      name: 'gathering',
+      type: 'relationship',
+      relationTo: 'gatherings',
+      index: true,
+      label: 'Fait partie de',
+      admin: {
+        description: 'Rattacher à un rassemblement (week-end d’église, convention…). Optionnel.',
       },
     },
     {

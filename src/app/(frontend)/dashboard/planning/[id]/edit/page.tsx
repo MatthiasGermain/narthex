@@ -25,7 +25,8 @@ export default async function EditPlanPage({
     notFound()
   }
 
-  const [plan, { docs: memberDocs }, { docs: groupDocs }] = await Promise.all([
+  const [plan, { docs: memberDocs }, { docs: groupDocs }, { docs: gatheringDocs }] =
+    await Promise.all([
     payload
       .findByID({
         collection: 'service-plans',
@@ -53,6 +54,15 @@ export default async function EditPlanPage({
       overrideAccess: false,
       user,
     }),
+    payload.find({
+      collection: 'gatherings',
+      where: { church: { equals: tenant.id } },
+      sort: '-startDate',
+      limit: 100,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    }),
   ])
 
   if (!plan) notFound()
@@ -66,6 +76,8 @@ export default async function EditPlanPage({
     firstName: m.firstName,
     lastName: m.lastName,
   }))
+
+  const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
 
   type LeaderRef = { firstName?: string; lastName?: string }
   const groups = groupDocs.map((g) => {
@@ -115,7 +127,9 @@ export default async function EditPlanPage({
           <ArrowLeft className="h-4 w-4" />
           Retour aux cultes
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">Modifier le culte</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          {plan.title?.trim() ? `Modifier « ${plan.title.trim()} »` : 'Modifier le culte'}
+        </h1>
       </div>
 
       <PlanForm
@@ -123,9 +137,15 @@ export default async function EditPlanPage({
         churchId={tenant.id}
         members={members}
         groups={groups}
+        gatherings={gatherings}
         serviceRoles={serviceRoles}
         defaultValues={{
           id: plan.id,
+          title: plan.title ?? '',
+          gathering:
+            typeof plan.gathering === 'object'
+              ? (plan.gathering?.id ?? null)
+              : ((plan.gathering as number | null | undefined) ?? null),
           date: dateValue,
           assignments,
           notes: plan.notes ?? '',

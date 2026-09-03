@@ -1,6 +1,7 @@
 import { resolveTenant } from '@/lib/tenant'
 import { isAdminRole } from '@/access'
 import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
+import { servicePlanTitle } from '@/lib/format'
 import { CalendarGrid } from '@/components/dashboard/calendar-grid'
 import type { TimelineItem } from '@/components/dashboard/monthly-timeline'
 
@@ -98,7 +99,7 @@ export default async function CalendarPage({ searchParams }: Props) {
       id: plan.id,
       date: dateISO,
       dateFormatted: formatFrenchDate(d),
-      title: 'Culte',
+      title: servicePlanTitle(plan.title),
       filledRoles,
       totalRoles,
       href: isAdmin ? `/dashboard/planning/${plan.id}/edit` : '#',

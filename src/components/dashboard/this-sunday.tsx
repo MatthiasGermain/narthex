@@ -15,6 +15,7 @@ interface Assignment {
 
 interface Plan {
   id: number
+  title?: string | null
   date: string
   notes?: string | null
   assignments: Assignment[]
@@ -46,6 +47,8 @@ export function ThisSunday({ plan, isAdmin }: ThisSundayProps) {
   const planDate = new Date(plan.date)
   const dateLabel = getDateLabel(plan.date)
   const dateFormatted = formatFrenchDate(planDate)
+  // Uniquement si le culte a été nommé : afficher « · Culte » n'apprendrait rien.
+  const planTitle = plan.title?.trim() || null
 
   const assignments = plan.assignments ?? []
   const totalRoles = assignments.length
@@ -62,7 +65,12 @@ export function ThisSunday({ plan, isAdmin }: ThisSundayProps) {
         <div className="flex items-center gap-2.5">
           <CalendarDays className="h-4 w-4 text-primary shrink-0" />
           <div>
-            <p className="font-semibold text-sm leading-none">{dateLabel}</p>
+            <p className="font-semibold text-sm leading-none">
+              {dateLabel}
+              {planTitle && (
+                <span className="font-normal text-muted-foreground"> · {planTitle}</span>
+              )}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5 capitalize">{dateFormatted}</p>
           </div>
         </div>

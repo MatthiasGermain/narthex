@@ -1,6 +1,7 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CalendarPlus, CalendarX } from 'lucide-react'
+import { CalendarPlus, CalendarX, CalendarRange } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
 import { formatDateShort, formatTime, isPast } from '@/lib/format'
@@ -36,6 +37,61 @@ function getLocationLabel(event: { room?: unknown; location?: string | null }): 
   return event.location || ''
 }
 
+
+interface GatheringRef {
+  id: number
+  title: string
+}
+
+/** Le rassemblement d'un événement, une fois peuplé par `depth: 1`. */
+function gatheringOf(event: { gathering?: unknown }): GatheringRef | null {
+  const g = event.gathering
+  return g && typeof g === 'object' && 'title' in g ? (g as GatheringRef) : null
+}
+
+/**
+ * Marque la première ligne de chaque rassemblement pour y poser un en-tête.
+ * La liste étant triée par date, les éléments d'un même rassemblement se
+ * suivent ; un rassemblement entrecoupé par un événement isolé reprend un
+ * en-tête, ce qui reste fidèle à la chronologie affichée.
+ */
+function withGroupHeaders<T extends { id: number; gathering?: unknown }>(list: T[]) {
+  let currentId: number | null = null
+  return list.map((event) => {
+    const gathering = gatheringOf(event)
+    const header = gathering && gathering.id !== currentId ? gathering : null
+    currentId = gathering ? gathering.id : null
+    return { header, event }
+  })
+}
+
+function GatheringHeading({ gathering }: { gathering: GatheringRef }) {
+  return (
+    <Link
+      href={`/dashboard/gatherings/${gathering.id}`}
+      className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary hover:underline"
+    >
+      <CalendarRange className="h-3.5 w-3.5" />
+      {gathering.title}
+    </Link>
+  )
+}
+
+function GatheringHeadingRow({
+  gathering,
+  colSpan,
+}: {
+  gathering: GatheringRef
+  colSpan: number
+}) {
+  return (
+    <TableRow className="bg-primary/5 hover:bg-primary/5">
+      <TableCell colSpan={colSpan} className="py-2">
+        <GatheringHeading gathering={gathering} />
+      </TableCell>
+    </TableRow>
+  )
+}
 
 export default async function EventsPage() {
   const { payload, user, tenant } = await resolveTenant()
@@ -94,9 +150,10 @@ export default async function EventsPage() {
             {upcoming.length > 0 && (
               <div className="flex flex-col gap-3">
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">À venir</h2>
-                {upcoming.map((event) => (
+                {withGroupHeaders(upcoming).map(({ header, event }) => (
+                  <Fragment key={event.id}>
+                  {header && <GatheringHeading gathering={header} />}
                   <div
-                    key={event.id}
                     className="relative flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4"
                   >
                     <Link
@@ -141,6 +198,7 @@ export default async function EventsPage() {
                       />
                     </div>
                   </div>
+                  </Fragment>
                 ))}
               </div>
             )}
@@ -148,9 +206,10 @@ export default async function EventsPage() {
             {past.length > 0 && (
               <div className="flex flex-col gap-3">
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Passés</h2>
-                {past.map((event) => (
+                {withGroupHeaders(past).map(({ header, event }) => (
+                  <Fragment key={event.id}>
+                  {header && <GatheringHeading gathering={header} />}
                   <div
-                    key={event.id}
                     className="relative flex items-start justify-between gap-3 rounded-lg border border-raisin/8 bg-raisin/5 p-4 opacity-60"
                   >
                     <Link
@@ -180,6 +239,7 @@ export default async function EventsPage() {
                       />
                     </div>
                   </div>
+                  </Fragment>
                 ))}
               </div>
             )}
@@ -209,8 +269,12 @@ export default async function EventsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {upcoming.map((event) => (
-                        <TableRow key={event.id} className="relative cursor-pointer hover:bg-raisin/5">
+                      {withGroupHeaders(upcoming).map(({ header, event }) => (
+                        <Fragment key={event.id}>
+                        {header && (
+                          <GatheringHeadingRow gathering={header} colSpan={isAdmin ? 8 : 7} />
+                        )}
+                        <TableRow className="relative cursor-pointer hover:bg-raisin/5">
                           {isAdmin && (
                             <TableCell className="relative z-10 w-px">
                               <BulkCheckbox id={event.id} label={`Sélectionner ${event.title}`} />
@@ -251,6 +315,7 @@ export default async function EventsPage() {
                             />
                           </TableCell>
                         </TableRow>
+                        </Fragment>
                       ))}
                     </TableBody>
                   </Table>
@@ -280,8 +345,12 @@ export default async function EventsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {past.map((event) => (
-                        <TableRow key={event.id} className="relative cursor-pointer hover:bg-raisin/5">
+                      {withGroupHeaders(past).map(({ header, event }) => (
+                        <Fragment key={event.id}>
+                        {header && (
+                          <GatheringHeadingRow gathering={header} colSpan={isAdmin ? 8 : 7} />
+                        )}
+                        <TableRow className="relative cursor-pointer hover:bg-raisin/5">
                           {isAdmin && (
                             <TableCell className="relative z-10 w-px">
                               <BulkCheckbox id={event.id} label={`Sélectionner ${event.title}`} />
@@ -322,6 +391,7 @@ export default async function EventsPage() {
                             />
                           </TableCell>
                         </TableRow>
+                        </Fragment>
                       ))}
                     </TableBody>
                   </Table>

@@ -3,6 +3,7 @@ import { Calendar, DoorOpen, Users } from 'lucide-react'
 import { resolveTenant } from '@/lib/tenant'
 import { isAdminRole } from '@/access'
 import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
+import { servicePlanTitle } from '@/lib/format'
 import { MonthlyTimeline, type TimelineItem } from '@/components/dashboard/monthly-timeline'
 import { ThisSunday } from '@/components/dashboard/this-sunday'
 
@@ -133,6 +134,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   const nextPlanData = nextPlan
     ? {
         id: nextPlan.id,
+        title: nextPlan.title ?? null,
         date: nextPlan.date,
         notes: (nextPlan.notes as string | null | undefined) ?? null,
         assignments: (
@@ -158,7 +160,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       id: plan.id,
       date: dateISO,
       dateFormatted: formatFrenchDate(d),
-      title: 'Culte',
+      title: servicePlanTitle(plan.title),
       filledRoles,
       totalRoles,
       href: isAdmin ? `/dashboard/planning/${plan.id}/edit` : '#',

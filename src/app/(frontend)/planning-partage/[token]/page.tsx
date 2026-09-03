@@ -64,6 +64,9 @@ export default async function SharedPlanningPage({
                 className="rounded-lg border border-raisin/8 bg-raisin/5 p-4"
               >
                 <p className="font-medium capitalize">{formatDate(plan.date)}</p>
+                {plan.title?.trim() && (
+                  <p className="text-sm text-muted-foreground">{plan.title.trim()}</p>
+                )}
                 <div className="mt-2">
                   <Assignments
                     assignments={plan.assignments as Assignment[]}

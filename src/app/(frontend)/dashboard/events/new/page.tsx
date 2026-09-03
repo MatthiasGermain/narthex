@@ -5,7 +5,7 @@ import { resolveTenant } from '@/lib/tenant'
 import { EventForm } from '@/components/features/events/event-form'
 
 interface Props {
-  searchParams: Promise<{ date?: string }>
+  searchParams: Promise<{ date?: string; gathering?: string }>
 }
 
 export default async function NewEventPage({ searchParams }: Props) {
@@ -14,21 +14,40 @@ export default async function NewEventPage({ searchParams }: Props) {
   if (!user) return null
   if (!tenant) return null
 
-  const { docs: roomDocs } = await payload.find({
-    collection: 'rooms',
-    where: { church: { equals: tenant.id }, isActive: { equals: true } },
-    sort: 'name',
-    limit: 100,
-    depth: 0,
-    overrideAccess: false,
-    user,
-  })
+  const [{ docs: roomDocs }, { docs: gatheringDocs }] = await Promise.all([
+    payload.find({
+      collection: 'rooms',
+      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      sort: 'name',
+      limit: 100,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'gatherings',
+      where: { church: { equals: tenant.id } },
+      sort: '-startDate',
+      limit: 100,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    }),
+  ])
 
   const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
+  const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
 
   // Date pré-remplie depuis le calendrier (format YYYY-MM-DD)
-  const { date } = await searchParams
+  const { date, gathering } = await searchParams
   const defaultDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined
+
+  // Rattachement pré-rempli quand on arrive depuis la fiche d'un rassemblement
+  const gatheringId = Number(gathering)
+  const defaultGathering =
+    gathering && !Number.isNaN(gatheringId) && gatheringDocs.some((g) => g.id === gatheringId)
+      ? gatheringId
+      : undefined
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +66,12 @@ export default async function NewEventPage({ searchParams }: Props) {
         mode="create"
         churchId={tenant.id}
         rooms={rooms}
-        defaultValues={defaultDate ? { date: defaultDate } : undefined}
+        gatherings={gatherings}
+        defaultValues={
+          defaultDate || defaultGathering
+            ? { date: defaultDate, gathering: defaultGathering }
+            : undefined
+        }
       />
     </div>
   )

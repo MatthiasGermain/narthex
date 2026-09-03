@@ -28,6 +28,17 @@ interface Props {
   searchParams: Promise<{ view?: string }>
 }
 
+/** Formulation pour lecteurs d'écran : « Ouvrir / Sélectionner … ». */
+function planLabelOf(plan: { title?: string | null; date: string }): string {
+  const name = plan.title?.trim()
+  return name ? `${name}, le ${formatDate(plan.date)}` : `le culte du ${formatDate(plan.date)}`
+}
+
+/** Nom seul, pour les phrases qui l'encadrent déjà (dialogue de suppression). */
+function planNameOf(plan: { title?: string | null; date: string }): string {
+  return plan.title?.trim() || formatDate(plan.date)
+}
+
 export default async function PlanningPage({ searchParams }: Props) {
   const { payload, user, tenant } = await resolveTenant()
 
@@ -131,15 +142,18 @@ export default async function PlanningPage({ searchParams }: Props) {
                     <Link
                       href={`/dashboard/planning/${plan.id}/edit`}
                       className="absolute inset-0"
-                      aria-label={`Ouvrir le culte du ${formatDate(plan.date)}`}
+                      aria-label={`Ouvrir ${planLabelOf(plan)}`}
                     />
                     {isAdmin && (
                       <div className="relative z-10 pt-0.5">
-                        <BulkCheckbox id={plan.id} label={`Sélectionner le culte du ${formatDate(plan.date)}`} />
+                        <BulkCheckbox id={plan.id} label={`Sélectionner ${planLabelOf(plan)}`} />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{formatDate(plan.date)}</p>
+                      {plan.title?.trim() && (
+                        <p className="text-sm text-muted-foreground">{plan.title.trim()}</p>
+                      )}
                       <div className="mt-1">
                         <Assignments assignments={plan.assignments as Assignment[]} view={view} />
                       </div>
@@ -148,7 +162,7 @@ export default async function PlanningPage({ searchParams }: Props) {
                       <div className="relative z-10">
                         <PlanActions
                           planId={plan.id}
-                          planLabel={formatDate(plan.date)}
+                          planLabel={planNameOf(plan)}
                           canDelete={isAdmin}
                         />
                       </div>
@@ -171,15 +185,18 @@ export default async function PlanningPage({ searchParams }: Props) {
                     <Link
                       href={`/dashboard/planning/${plan.id}/edit`}
                       className="absolute inset-0"
-                      aria-label={`Ouvrir le culte du ${formatDate(plan.date)}`}
+                      aria-label={`Ouvrir ${planLabelOf(plan)}`}
                     />
                     {isAdmin && (
                       <div className="relative z-10 pt-0.5">
-                        <BulkCheckbox id={plan.id} label={`Sélectionner le culte du ${formatDate(plan.date)}`} />
+                        <BulkCheckbox id={plan.id} label={`Sélectionner ${planLabelOf(plan)}`} />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{formatDate(plan.date)}</p>
+                      {plan.title?.trim() && (
+                        <p className="text-sm text-muted-foreground">{plan.title.trim()}</p>
+                      )}
                       <div className="mt-1">
                         <Assignments assignments={plan.assignments as Assignment[]} view={view} />
                       </div>
@@ -188,7 +205,7 @@ export default async function PlanningPage({ searchParams }: Props) {
                       <div className="relative z-10">
                         <PlanActions
                           planId={plan.id}
-                          planLabel={formatDate(plan.date)}
+                          planLabel={planNameOf(plan)}
                           canDelete={isAdmin}
                         />
                       </div>
@@ -225,16 +242,21 @@ export default async function PlanningPage({ searchParams }: Props) {
                         <TableRow key={plan.id} className="relative cursor-pointer hover:bg-raisin/5">
                           {isAdmin && (
                             <TableCell className="relative z-10 w-px align-top">
-                              <BulkCheckbox id={plan.id} label={`Sélectionner le culte du ${formatDate(plan.date)}`} />
+                              <BulkCheckbox id={plan.id} label={`Sélectionner ${planLabelOf(plan)}`} />
                             </TableCell>
                           )}
                           <TableCell className="align-top font-medium whitespace-nowrap">
                             <Link
                               href={`/dashboard/planning/${plan.id}/edit`}
                               className="absolute inset-0"
-                              aria-label={`Ouvrir le culte du ${formatDate(plan.date)}`}
+                              aria-label={`Ouvrir ${planLabelOf(plan)}`}
                             />
                             {formatDate(plan.date)}
+                            {plan.title?.trim() && (
+                              <span className="block whitespace-normal text-xs font-normal text-muted-foreground">
+                                {plan.title.trim()}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="align-top whitespace-normal">
                             <Assignments assignments={plan.assignments as Assignment[]} view={view} />
@@ -243,7 +265,7 @@ export default async function PlanningPage({ searchParams }: Props) {
                             {isAdmin && (
                               <PlanActions
                                 planId={plan.id}
-                                planLabel={formatDate(plan.date)}
+                                planLabel={planNameOf(plan)}
                                 canDelete={isAdmin}
                               />
                             )}
@@ -280,16 +302,21 @@ export default async function PlanningPage({ searchParams }: Props) {
                         <TableRow key={plan.id} className="relative cursor-pointer hover:bg-raisin/5">
                           {isAdmin && (
                             <TableCell className="relative z-10 w-px align-top">
-                              <BulkCheckbox id={plan.id} label={`Sélectionner le culte du ${formatDate(plan.date)}`} />
+                              <BulkCheckbox id={plan.id} label={`Sélectionner ${planLabelOf(plan)}`} />
                             </TableCell>
                           )}
                           <TableCell className="align-top font-medium whitespace-nowrap">
                             <Link
                               href={`/dashboard/planning/${plan.id}/edit`}
                               className="absolute inset-0"
-                              aria-label={`Ouvrir le culte du ${formatDate(plan.date)}`}
+                              aria-label={`Ouvrir ${planLabelOf(plan)}`}
                             />
                             {formatDate(plan.date)}
+                            {plan.title?.trim() && (
+                              <span className="block whitespace-normal text-xs font-normal text-muted-foreground">
+                                {plan.title.trim()}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="align-top whitespace-normal">
                             <Assignments assignments={plan.assignments as Assignment[]} view={view} />
@@ -298,7 +325,7 @@ export default async function PlanningPage({ searchParams }: Props) {
                             {isAdmin && (
                               <PlanActions
                                 planId={plan.id}
-                                planLabel={formatDate(plan.date)}
+                                planLabel={planNameOf(plan)}
                                 canDelete={isAdmin}
                               />
                             )}

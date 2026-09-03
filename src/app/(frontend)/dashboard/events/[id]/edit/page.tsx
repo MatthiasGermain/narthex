@@ -19,7 +19,7 @@ export default async function EditEventPage({
   if (!user) return null
   if (!tenant) notFound()
 
-  const [event, { docs: roomDocs }] = await Promise.all([
+  const [event, { docs: roomDocs }, { docs: gatheringDocs }] = await Promise.all([
     payload.findByID({
       collection: 'events',
       id: eventId,
@@ -31,6 +31,15 @@ export default async function EditEventPage({
       collection: 'rooms',
       where: { church: { equals: tenant.id }, isActive: { equals: true } },
       sort: 'name',
+      limit: 100,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'gatherings',
+      where: { church: { equals: tenant.id } },
+      sort: '-startDate',
       limit: 100,
       depth: 0,
       overrideAccess: false,
@@ -48,6 +57,7 @@ export default async function EditEventPage({
   const dateValue = event.date ? new Date(event.date).toISOString().split('T')[0] : ''
 
   const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
+  const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
 
   // Extraire l'ID de la salle (peut être un objet ou un number selon le depth)
   const eventRoomId = typeof event.room === 'object' ? (event.room as { id: number } | null)?.id : event.room as number | null | undefined
@@ -69,6 +79,7 @@ export default async function EditEventPage({
         mode="edit"
         churchId={tenant.id}
         rooms={rooms}
+        gatherings={gatherings}
         defaultValues={{
           id: event.id,
           title: event.title,
@@ -78,6 +89,10 @@ export default async function EditEventPage({
           description: event.description ?? '',
           visibility: event.visibility as 'public' | 'internal',
           room: eventRoomId ?? null,
+          gathering:
+            typeof event.gathering === 'object'
+              ? (event.gathering?.id ?? null)
+              : ((event.gathering as number | null | undefined) ?? null),
           image: event.image as number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null,
         }}
       />

@@ -23,6 +23,11 @@ interface RoomOption {
   name: string
 }
 
+interface GatheringOption {
+  id: number
+  title: string
+}
+
 interface EventData {
   id?: number
   title?: string
@@ -32,6 +37,7 @@ interface EventData {
   description?: string
   visibility?: 'public' | 'internal'
   room?: number | null
+  gathering?: number | null
   image?: number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null
 }
 
@@ -40,11 +46,18 @@ interface EventFormProps {
   defaultValues?: EventData
   churchId: number
   rooms?: RoomOption[]
+  gatherings?: GatheringOption[]
 }
 
 const getInitialImage = (image: EventData['image']) => getInitialMedia(image)
 
-export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFormProps) {
+export function EventForm({
+  mode,
+  defaultValues,
+  churchId,
+  rooms = [],
+  gatherings = [],
+}: EventFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -57,6 +70,9 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
   const [roomId, setRoomId] = useState<string>(defaultValues?.room?.toString() ?? '')
   const [description, setDescription] = useState(defaultValues?.description ?? '')
   const [visibility, setVisibility] = useState<string>(defaultValues?.visibility ?? 'public')
+  const [gatheringId, setGatheringId] = useState<string>(
+    defaultValues?.gathering != null ? String(defaultValues.gathering) : '',
+  )
 
   const initialImage = getInitialImage(defaultValues?.image)
   const [imageId, setImageId] = useState<number | null>(initialImage.id)
@@ -132,6 +148,7 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
           location: location.trim() || undefined,
           description: description.trim() || undefined,
           visibility,
+          gathering: gatheringId ? Number(gatheringId) : null,
           image: imageId || '',
           church: churchId,
         }),
@@ -306,6 +323,29 @@ export function EventForm({ mode, defaultValues, churchId, rooms = [] }: EventFo
           </SelectContent>
         </Select>
       </div>
+
+      {/* Rattachement : masque tant que l'eglise n'a cree aucun rassemblement */}
+      {gatherings.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="gathering">Fait partie de</Label>
+          <Select
+            value={gatheringId || 'none'}
+            onValueChange={(v) => setGatheringId(v === 'none' ? '' : v)}
+          >
+            <SelectTrigger id="gathering">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun rassemblement</SelectItem>
+              {gatherings.map((g) => (
+                <SelectItem key={g.id} value={String(g.id)}>
+                  {g.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">

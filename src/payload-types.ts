@@ -80,6 +80,7 @@ export interface Config {
     sermons: Sermon;
     invitations: Invitation;
     groups: Group;
+    gatherings: Gathering;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -100,6 +101,7 @@ export interface Config {
     sermons: SermonsSelect<false> | SermonsSelect<true>;
     invitations: InvitationsSelect<false> | InvitationsSelect<true>;
     groups: GroupsSelect<false> | GroupsSelect<true>;
+    gatherings: GatheringsSelect<false> | GatheringsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -401,6 +403,10 @@ export interface ChurchProfile {
 export interface Event {
   id: number;
   title: string;
+  /**
+   * Rattacher à un rassemblement (week-end d’église, convention…). Optionnel.
+   */
+  gathering?: (number | null) | Gathering;
   date: string;
   time: string;
   /**
@@ -420,6 +426,33 @@ export interface Event {
   /**
    * Auto-assigné au créateur
    */
+  createdBy?: (number | null) | User;
+  /**
+   * Auto-assigné à votre église
+   */
+  church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Regroupe plusieurs événements et, si besoin, un ou plusieurs cultes sur une même période.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gatherings".
+ */
+export interface Gathering {
+  id: number;
+  /**
+   * Ex : Week-end d'église, Convention de printemps, Semaine de prière.
+   */
+  title: string;
+  startDate: string;
+  endDate: string;
+  /**
+   * Lieu commun à tout le rassemblement, si différent de l’église.
+   */
+  location?: string | null;
+  description?: string | null;
   createdBy?: (number | null) | User;
   /**
    * Auto-assigné à votre église
@@ -489,7 +522,15 @@ export interface Member {
  */
 export interface ServicePlan {
   id: number;
+  /**
+   * Optionnel. Ex : Culte de Noël, Baptêmes, Sainte Cène. Vide = « Culte ».
+   */
+  title?: string | null;
   date: string;
+  /**
+   * Rattacher à un rassemblement (week-end d’église, convention…). Optionnel.
+   */
+  gathering?: (number | null) | Gathering;
   /**
    * Assignez des membres à chaque rôle pour ce culte
    */
@@ -669,6 +710,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'groups';
         value: number | Group;
+      } | null)
+    | ({
+        relationTo: 'gatherings';
+        value: number | Gathering;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -915,6 +960,7 @@ export interface ChurchProfilesSelect<T extends boolean = true> {
  */
 export interface EventsSelect<T extends boolean = true> {
   title?: T;
+  gathering?: T;
   date?: T;
   time?: T;
   room?: T;
@@ -968,7 +1014,9 @@ export interface MembersSelect<T extends boolean = true> {
  * via the `definition` "service-plans_select".
  */
 export interface ServicePlansSelect<T extends boolean = true> {
+  title?: T;
   date?: T;
+  gathering?: T;
   assignments?:
     | T
     | {
@@ -1029,6 +1077,21 @@ export interface GroupsSelect<T extends boolean = true> {
   description?: T;
   members?: T;
   leader?: T;
+  createdBy?: T;
+  church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gatherings_select".
+ */
+export interface GatheringsSelect<T extends boolean = true> {
+  title?: T;
+  startDate?: T;
+  endDate?: T;
+  location?: T;
+  description?: T;
   createdBy?: T;
   church?: T;
   updatedAt?: T;

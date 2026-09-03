@@ -7,7 +7,7 @@ import { DEFAULT_SERVICE_ROLES } from '@/lib/service-roles'
 import { PlanForm } from '@/components/features/planning/plan-form'
 
 interface Props {
-  searchParams: Promise<{ date?: string }>
+  searchParams: Promise<{ date?: string; gathering?: string }>
 }
 
 export default async function NewPlanPage({ searchParams }: Props) {
@@ -22,7 +22,7 @@ export default async function NewPlanPage({ searchParams }: Props) {
   }
 
   // Charger les membres actifs et les groupes pour les sélecteurs
-  const [{ docs: memberDocs }, { docs: groupDocs }] = await Promise.all([
+  const [{ docs: memberDocs }, { docs: groupDocs }, { docs: gatheringDocs }] = await Promise.all([
     payload.find({
       collection: 'members',
       where: { church: { equals: tenant.id } },
@@ -38,6 +38,15 @@ export default async function NewPlanPage({ searchParams }: Props) {
       sort: 'name',
       limit: 200,
       depth: 1,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'gatherings',
+      where: { church: { equals: tenant.id } },
+      sort: '-startDate',
+      limit: 100,
+      depth: 0,
       overrideAccess: false,
       user,
     }),
@@ -65,9 +74,18 @@ export default async function NewPlanPage({ searchParams }: Props) {
       ? tenant.settings.serviceRoles.map((r) => r.label)
       : DEFAULT_SERVICE_ROLES.map((r) => r.label)
 
+  const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
+
   // Date pré-remplie depuis le calendrier (format YYYY-MM-DD)
-  const { date } = await searchParams
+  const { date, gathering } = await searchParams
   const defaultDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined
+
+  // Rattachement pré-rempli quand on arrive depuis la fiche d'un rassemblement
+  const gatheringId = Number(gathering)
+  const defaultGathering =
+    gathering && !Number.isNaN(gatheringId) && gatheringDocs.some((g) => g.id === gatheringId)
+      ? gatheringId
+      : undefined
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,8 +105,13 @@ export default async function NewPlanPage({ searchParams }: Props) {
         churchId={tenant.id}
         members={members}
         groups={groups}
+        gatherings={gatherings}
         serviceRoles={serviceRoles}
-        defaultValues={defaultDate ? { date: defaultDate } : undefined}
+        defaultValues={
+          defaultDate || defaultGathering
+            ? { date: defaultDate, gathering: defaultGathering }
+            : undefined
+        }
       />
     </div>
   )

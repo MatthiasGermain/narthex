@@ -202,7 +202,7 @@ export function CalendarGrid({
                             : 'bg-sunglow/15 text-raisin'
                         }`}
                       >
-                        {item.type === 'culte' ? 'Culte' : item.title}
+                        {item.title}
                       </div>
                     ))}
                     {overflow > 0 && (

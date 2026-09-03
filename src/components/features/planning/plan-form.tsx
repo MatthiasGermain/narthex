@@ -15,11 +15,23 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface MemberOption {
   id: number
   firstName: string
   lastName: string
+}
+
+interface GatheringOption {
+  id: number
+  title: string
 }
 
 interface GroupOption {
@@ -36,6 +48,8 @@ interface AssignmentData {
 
 interface PlanData {
   id?: number
+  title?: string
+  gathering?: number | null
   date?: string
   assignments?: AssignmentData[]
   notes?: string
@@ -47,6 +61,7 @@ interface PlanFormProps {
   churchId: number
   members: MemberOption[]
   groups?: GroupOption[]
+  gatherings?: GatheringOption[]
   serviceRoles: string[]
 }
 
@@ -61,14 +76,19 @@ export function PlanForm({
   churchId,
   members,
   groups = [],
+  gatherings = [],
   serviceRoles,
 }: PlanFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const [title, setTitle] = useState(defaultValues?.title ?? '')
   const [date, setDate] = useState(defaultValues?.date ?? '')
   const [notes, setNotes] = useState(defaultValues?.notes ?? '')
+  const [gatheringId, setGatheringId] = useState<string>(
+    defaultValues?.gathering != null ? String(defaultValues.gathering) : '',
+  )
 
   // Initialiser les assignments : soit depuis defaultValues, soit depuis les serviceRoles
   const initialAssignments: AssignmentData[] = defaultValues?.assignments?.length
@@ -139,6 +159,8 @@ export function PlanForm({
           : '/api/service-plans'
 
       const body = {
+        // null (et non undefined) pour qu'un nom effacé le soit aussi côté serveur
+        title: title.trim() || null,
         date,
         assignments: assignments
           .filter((a) => a.role.trim())
@@ -149,6 +171,7 @@ export function PlanForm({
             group: isWorshipRole(a.role) && a.groupId != null ? a.groupId : null,
           })),
         notes: notes.trim() || undefined,
+        gathering: gatheringId ? Number(gatheringId) : null,
         church: churchId,
       }
 
@@ -180,6 +203,20 @@ export function PlanForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
+      {/* Nom */}
+      <div className="flex flex-col gap-2 max-w-md">
+        <Label htmlFor="title">Nom du culte</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Culte"
+        />
+        <p className="text-sm text-muted-foreground">
+          Optionnel — laissez vide pour afficher simplement « Culte ».
+        </p>
+      </div>
+
       {/* Date */}
       <div className="flex flex-col gap-2 max-w-xs">
         <Label htmlFor="date">Date du culte *</Label>
@@ -348,6 +385,29 @@ export function PlanForm({
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
+
+      {/* Rattachement : masque tant que l'eglise n'a cree aucun rassemblement */}
+      {gatherings.length > 0 && (
+        <div className="flex flex-col gap-2 max-w-md">
+          <Label htmlFor="plan-gathering">Fait partie de</Label>
+          <Select
+            value={gatheringId || 'none'}
+            onValueChange={(v) => setGatheringId(v === 'none' ? '' : v)}
+          >
+            <SelectTrigger id="plan-gathering">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun rassemblement</SelectItem>
+              {gatherings.map((g) => (
+                <SelectItem key={g.id} value={String(g.id)}>
+                  {g.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
