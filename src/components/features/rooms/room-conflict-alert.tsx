@@ -71,7 +71,7 @@ export function RoomConflictAlert({
   return (
     <div
       role="status"
-      className="flex gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+      className="flex gap-3 rounded-lg border border-sunglow/30 bg-sunglow/15 px-4 py-3 text-raisin"
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex flex-col gap-1 text-sm">

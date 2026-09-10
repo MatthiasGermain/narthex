@@ -166,7 +166,7 @@ export function AttachPicker({
                       <span className="block truncate text-sm">{c.label}</span>
                       <span className="block text-xs text-muted-foreground">{c.meta}</span>
                       {c.attachedTo && (
-                        <span className="block text-xs text-amber-700 dark:text-amber-500">
+                        <span className="block text-xs font-medium text-raisin">
                           Sera déplacé depuis « {c.attachedTo} »
                         </span>
                       )}
