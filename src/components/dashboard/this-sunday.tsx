@@ -1,17 +1,11 @@
 import Link from 'next/link'
 import { CalendarDays, ChevronRight, FileText, UserRound } from 'lucide-react'
 import { formatFrenchDate } from '@/lib/date-utils'
-
-interface Member {
-  id: number
-  firstName: string
-  lastName: string
-}
-
-interface Assignment {
-  role: string
-  members: Member[] | number[] | null
-}
+import {
+  getAssignmentDetails,
+  isFilled,
+  type Assignment,
+} from '@/components/features/planning/assignments'
 
 interface Plan {
   id: number
@@ -54,9 +48,8 @@ export function ThisSunday({ plan, isAdmin, announcements }: ThisSundayProps) {
 
   const assignments = plan.assignments ?? []
   const totalRoles = assignments.length
-  const filledRoles = assignments.filter(
-    (a) => Array.isArray(a.members) && a.members.length > 0,
-  ).length
+  // Même règle que la liste des cultes : un rôle tenu par un groupe est rempli.
+  const filledRoles = assignments.filter(isFilled).length
 
   const allFilled = filledRoles === totalRoles && totalRoles > 0
 
@@ -126,15 +119,14 @@ export function ThisSunday({ plan, isAdmin, announcements }: ThisSundayProps) {
       {/* Assignments grid */}
       {assignments.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-raisin/8">
-          {assignments.map((a) => {
-            const resolvedMembers = (a.members ?? []).filter(
-              (m): m is Member => typeof m === 'object',
-            )
-            const isEmpty = resolvedMembers.length === 0
+          {getAssignmentDetails(assignments).map((d, index) => {
+            // Groupe (ex : Louange) puis membres, comme dans la vue détaillée des cultes.
+            const people = [d.groupLabel, ...d.names].filter(Boolean) as string[]
+            const isEmpty = people.length === 0
 
             return (
               <div
-                key={a.role}
+                key={`${d.role}-${index}`}
                 className="flex items-start gap-2.5 px-4 py-2.5 border-b border-raisin/8 last:border-b-0 sm:nth-last-[-n+2]:border-b-0"
               >
                 <UserRound
@@ -142,14 +134,12 @@ export function ThisSunday({ plan, isAdmin, announcements }: ThisSundayProps) {
                 />
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-none mb-0.5">
-                    {a.role}
+                    {d.role}
                   </p>
                   {isEmpty ? (
                     <p className="text-sm text-muted-foreground/50 italic">Non assigné</p>
                   ) : (
-                    <p className="text-sm font-medium truncate">
-                      {resolvedMembers.map((m) => `${m.firstName} ${m.lastName}`).join(', ')}
-                    </p>
+                    <p className="text-sm font-medium truncate">{people.join(', ')}</p>
                   )}
                 </div>
               </div>

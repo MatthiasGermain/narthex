@@ -7,6 +7,7 @@ import { servicePlanTitle } from '@/lib/format'
 import { buildAnnouncementSheet, findUserMemberId, presidingMemberIds } from '@/lib/announcements'
 import { MonthlyTimeline, type TimelineItem } from '@/components/dashboard/monthly-timeline'
 import { ThisSunday } from '@/components/dashboard/this-sunday'
+import { isFilled, type Assignment } from '@/components/features/planning/assignments'
 
 interface Props {
   searchParams: Promise<{ month?: string }>
@@ -130,7 +131,6 @@ export default async function DashboardPage({ searchParams }: Props) {
     ...statsPromises,
   ])
 
-  type MemberRef = { id: number; firstName: string; lastName: string }
   const nextPlan = nextPlanResult.docs[0] ?? null
 
   // Feuille d'annonces du prochain culte, et « vous présidez » si c'est le cas.
@@ -151,9 +151,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         title: nextPlan.title ?? null,
         date: nextPlan.date,
         notes: (nextPlan.notes as string | null | undefined) ?? null,
-        assignments: (
-          nextPlan.assignments as Array<{ role: string; members: MemberRef[] | number[] | null }> ?? []
-        ),
+        assignments: (nextPlan.assignments as Assignment[] | null | undefined) ?? [],
       }
     : null
 
@@ -165,9 +163,10 @@ export default async function DashboardPage({ searchParams }: Props) {
   const planItems: TimelineItem[] = plansResult.docs.map((plan) => {
     const d = new Date(plan.date)
     const dateISO = d.toISOString().split('T')[0]
-    const assignments = plan.assignments as Array<{ role: string; members: MemberRef[] | null }> | undefined
+    const assignments = plan.assignments as Assignment[] | null | undefined
     const totalRoles = assignments?.length ?? 0
-    const filledRoles = assignments?.filter((a) => a.members && a.members.length > 0).length ?? 0
+    // Même règle que la liste des cultes : un rôle tenu par un groupe est rempli.
+    const filledRoles = assignments?.filter(isFilled).length ?? 0
 
     return {
       type: 'culte' as const,

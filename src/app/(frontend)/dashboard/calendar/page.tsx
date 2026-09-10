@@ -4,6 +4,7 @@ import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
 import { servicePlanTitle } from '@/lib/format'
 import { CalendarGrid } from '@/components/dashboard/calendar-grid'
 import type { TimelineItem } from '@/components/dashboard/monthly-timeline'
+import { isFilled, type Assignment } from '@/components/features/planning/assignments'
 
 interface Props {
   searchParams: Promise<{ month?: string }>
@@ -85,14 +86,13 @@ export default async function CalendarPage({ searchParams }: Props) {
   ])
 
   // Construire les items (même pattern que dashboard/page.tsx)
-  type MemberRef = { id: number; firstName: string; lastName: string }
-
   const planItems: TimelineItem[] = plansResult.docs.map((plan) => {
     const d = new Date(plan.date)
     const dateISO = d.toISOString().split('T')[0]
-    const assignments = plan.assignments as Array<{ role: string; members: MemberRef[] | null }> | undefined
+    const assignments = plan.assignments as Assignment[] | null | undefined
     const totalRoles = assignments?.length ?? 0
-    const filledRoles = assignments?.filter((a) => a.members && a.members.length > 0).length ?? 0
+    // Même règle que la liste des cultes : un rôle tenu par un groupe est rempli.
+    const filledRoles = assignments?.filter(isFilled).length ?? 0
 
     return {
       type: 'culte' as const,
