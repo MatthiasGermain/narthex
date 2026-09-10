@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Megaphone } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
 import { DEFAULT_SERVICE_ROLES } from '@/lib/service-roles'
 import { PlanForm } from '@/components/features/planning/plan-form'
+import { Button } from '@/components/ui/button'
 
 export default async function EditPlanPage({
   params,
@@ -137,9 +138,17 @@ export default async function EditPlanPage({
           <ArrowLeft className="h-4 w-4" />
           Retour aux cultes
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold">
-          {plan.title?.trim() ? `Modifier « ${plan.title.trim()} »` : 'Modifier le culte'}
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {plan.title?.trim() ? `Modifier « ${plan.title.trim()} »` : 'Modifier le culte'}
+          </h1>
+          <Link href={`/dashboard/planning/${plan.id}/annonces`}>
+            <Button variant="outline" size="sm">
+              <Megaphone className="mr-2 h-4 w-4" />
+              Annonces
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <PlanForm

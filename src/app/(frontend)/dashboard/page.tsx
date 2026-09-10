@@ -4,6 +4,7 @@ import { resolveTenant } from '@/lib/tenant'
 import { isAdminRole } from '@/access'
 import { formatFrenchDate, getTodayISO, getNowParis } from '@/lib/date-utils'
 import { servicePlanTitle } from '@/lib/format'
+import { buildAnnouncementSheet, findUserMemberId, presidingMemberIds } from '@/lib/announcements'
 import { MonthlyTimeline, type TimelineItem } from '@/components/dashboard/monthly-timeline'
 import { ThisSunday } from '@/components/dashboard/this-sunday'
 
@@ -131,6 +132,19 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   type MemberRef = { id: number; firstName: string; lastName: string }
   const nextPlan = nextPlanResult.docs[0] ?? null
+
+  // Feuille d'annonces du prochain culte, et « vous présidez » si c'est le cas.
+  let announcements: { count: number; presiding: boolean } | null = null
+  if (nextPlan) {
+    const [sheet, memberId] = await Promise.all([
+      buildAnnouncementSheet(payload, user, nextPlan, tenant.id),
+      findUserMemberId(payload, user.id, tenant.id),
+    ])
+    announcements = {
+      count: sheet.visibleCount,
+      presiding: memberId !== null && presidingMemberIds(nextPlan).includes(memberId),
+    }
+  }
   const nextPlanData = nextPlan
     ? {
         id: nextPlan.id,
@@ -197,7 +211,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ThisSunday plan={nextPlanData} isAdmin={isAdmin} />
+      <ThisSunday plan={nextPlanData} isAdmin={isAdmin} announcements={announcements} />
 
       <MonthlyTimeline
         items={items}

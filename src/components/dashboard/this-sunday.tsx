@@ -24,6 +24,8 @@ interface Plan {
 interface ThisSundayProps {
   plan: Plan | null
   isAdmin: boolean
+  /** Feuille d'annonces du culte : nombre d'annonces lues, et si l'utilisateur préside. */
+  announcements?: { count: number; presiding: boolean } | null
 }
 
 function getDateLabel(dateISO: string): string {
@@ -41,7 +43,7 @@ function getDateLabel(dateISO: string): string {
   return 'Prochain culte'
 }
 
-export function ThisSunday({ plan, isAdmin }: ThisSundayProps) {
+export function ThisSunday({ plan, isAdmin, announcements }: ThisSundayProps) {
   if (!plan) return null
 
   const planDate = new Date(plan.date)
@@ -91,6 +93,35 @@ export function ThisSunday({ plan, isAdmin }: ThisSundayProps) {
           )}
         </div>
       </div>
+
+      {/* Annonces : mises en avant pour la personne qui préside */}
+      {announcements && (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 border-b border-raisin/8 px-4 py-2.5 ${
+            announcements.presiding ? 'bg-sunglow/15' : ''
+          }`}
+        >
+          <p className="text-sm">
+            {announcements.presiding && <span className="font-semibold">Vous présidez · </span>}
+            {announcements.count === 0
+              ? 'Aucune annonce'
+              : `${announcements.count} annonce${announcements.count > 1 ? 's' : ''}`}
+          </p>
+          <div className="flex items-center gap-4">
+            {(announcements.presiding || isAdmin) && (
+              <Link
+                href={`/dashboard/planning/${plan.id}/annonces`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Préparer
+              </Link>
+            )}
+            <Link href={`/annonces/${plan.id}`} className="text-sm font-medium text-primary hover:underline">
+              {announcements.presiding ? 'Lire au pupitre' : 'Voir les annonces'}
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Assignments grid */}
       {assignments.length > 0 && (

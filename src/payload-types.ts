@@ -560,6 +560,20 @@ export interface ServicePlan {
    */
   notes?: string | null;
   /**
+   * Les événements à annoncer sont calculés depuis le calendrier. Seuls les choix de la présidence sont enregistrés ici : ce qu'elle masque et les annonces libres.
+   */
+  announcements?: {
+    hiddenEvents?: (number | Event)[] | null;
+    hiddenGatherings?: (number | Gathering)[] | null;
+    extra?:
+      | {
+          title: string;
+          details?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
    * Auto-assigné au créateur
    */
   createdBy?: (number | null) | User;
@@ -1037,6 +1051,19 @@ export interface ServicePlansSelect<T extends boolean = true> {
         id?: T;
       };
   notes?: T;
+  announcements?:
+    | T
+    | {
+        hiddenEvents?: T;
+        hiddenGatherings?: T;
+        extra?:
+          | T
+          | {
+              title?: T;
+              details?: T;
+              id?: T;
+            };
+      };
   createdBy?: T;
   church?: T;
   updatedAt?: T;

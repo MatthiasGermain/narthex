@@ -130,6 +130,41 @@ export const ServicePlans: CollectionConfig = {
       },
     },
     {
+      name: 'announcements',
+      type: 'group',
+      label: 'Annonces',
+      admin: {
+        description:
+          "Les événements à annoncer sont calculés depuis le calendrier. Seuls les choix de la présidence sont enregistrés ici : ce qu'elle masque et les annonces libres.",
+      },
+      fields: [
+        {
+          name: 'hiddenEvents',
+          type: 'relationship',
+          relationTo: 'events',
+          hasMany: true,
+          label: 'Événements à ne pas annoncer',
+        },
+        {
+          name: 'hiddenGatherings',
+          type: 'relationship',
+          relationTo: 'gatherings',
+          hasMany: true,
+          label: 'Rassemblements à ne pas annoncer',
+        },
+        {
+          name: 'extra',
+          type: 'array',
+          label: 'Annonces libres',
+          labels: { singular: 'Annonce libre', plural: 'Annonces libres' },
+          fields: [
+            { name: 'title', type: 'text', required: true, label: 'Titre' },
+            { name: 'details', type: 'textarea', label: 'Détails', admin: { rows: 2 } },
+          ],
+        },
+      ],
+    },
+    {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
