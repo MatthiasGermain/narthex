@@ -25,7 +25,7 @@ export default async function EditPlanPage({
     notFound()
   }
 
-  const [plan, { docs: memberDocs }, { docs: groupDocs }, { docs: gatheringDocs }] =
+  const [plan, { docs: memberDocs }, { docs: groupDocs }, { docs: gatheringDocs }, { docs: roomDocs }] =
     await Promise.all([
     payload
       .findByID({
@@ -63,6 +63,15 @@ export default async function EditPlanPage({
       overrideAccess: false,
       user,
     }),
+    payload.find({
+      collection: 'rooms',
+      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      sort: 'name',
+      limit: 100,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    }),
   ])
 
   if (!plan) notFound()
@@ -78,6 +87,7 @@ export default async function EditPlanPage({
   }))
 
   const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
+  const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
 
   type LeaderRef = { firstName?: string; lastName?: string }
   const groups = groupDocs.map((g) => {
@@ -138,10 +148,17 @@ export default async function EditPlanPage({
         members={members}
         groups={groups}
         gatherings={gatherings}
+        rooms={rooms}
         serviceRoles={serviceRoles}
         defaultValues={{
           id: plan.id,
           title: plan.title ?? '',
+          time: plan.time ?? '',
+          endTime: plan.endTime ?? '',
+          room:
+            typeof plan.room === 'object'
+              ? (plan.room?.id ?? null)
+              : ((plan.room as number | null | undefined) ?? null),
           gathering:
             typeof plan.gathering === 'object'
               ? (plan.gathering?.id ?? null)

@@ -107,15 +107,16 @@ export default async function GatheringDetailPage({
       id: p.id,
       dateISO: dayOf(p.date),
       title: servicePlanTitle(p.title),
-      time: null,
+      time: p.time ?? null,
       href: `/dashboard/planning/${p.id}/edit`,
     })),
   ].sort((a, b) => {
     const byDate = a.dateISO.localeCompare(b.dateISO)
     if (byDate !== 0) return byDate
-    // Un culte ouvre la journée ; sinon on classe à l'heure.
-    if (a.kind !== b.kind) return a.kind === 'plan' ? -1 : 1
-    return (a.time ?? '').localeCompare(b.time ?? '')
+    // À l'heure ; sans heure, un élément ouvre la journée. À égalité, le culte d'abord.
+    const byTime = (a.time ?? '').localeCompare(b.time ?? '')
+    if (byTime !== 0) return byTime
+    return a.kind === b.kind ? 0 : a.kind === 'plan' ? -1 : 1
   })
 
   const days = items.reduce<[string, ProgramItem[]][]>((acc, item) => {
@@ -165,7 +166,7 @@ export default async function GatheringDetailPage({
   const planCandidates = toCandidates(
     allPlans,
     (p) => servicePlanTitle(p.title),
-    () => null,
+    (p) => p.time ?? null,
   )
 
   const newEventHref = `/dashboard/events/new?gathering=${gathering.id}&date=${startDay}`

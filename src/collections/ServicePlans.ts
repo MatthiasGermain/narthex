@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { isAdmin, readOwnChurch } from '../access'
 import { assignCreatedBy } from './hooks'
+import { validateEndTime, validateTime } from '../lib/time'
 
 export const ServicePlans: CollectionConfig = {
   slug: 'service-plans',
@@ -35,6 +36,44 @@ export const ServicePlans: CollectionConfig = {
       admin: {
         date: { pickerAppearance: 'dayOnly', displayFormat: 'dd/MM/yyyy' },
       },
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'time',
+          type: 'text',
+          label: 'Début',
+          admin: { placeholder: 'HH:mm', width: '33%' },
+          validate: (
+            value: string | null | undefined,
+            { siblingData }: { siblingData?: { room?: unknown } },
+          ) => {
+            // Sans heure, un culte ne peut pas être placé dans la journée de la salle.
+            if (!value && siblingData?.room) {
+              return "Précisez l'heure de début pour réserver la salle"
+            }
+            return validateTime(value)
+          },
+        },
+        {
+          name: 'endTime',
+          type: 'text',
+          label: 'Fin',
+          admin: { placeholder: 'HH:mm', width: '33%' },
+          validate: (
+            value: string | null | undefined,
+            { siblingData }: { siblingData?: { time?: string | null } },
+          ) => validateEndTime(value, siblingData?.time),
+        },
+        {
+          name: 'room',
+          type: 'relationship',
+          relationTo: 'rooms',
+          label: 'Salle',
+          admin: { width: '34%' },
+        },
+      ],
     },
     {
       name: 'gathering',

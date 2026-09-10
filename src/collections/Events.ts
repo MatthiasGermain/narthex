@@ -1,6 +1,7 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 import { isAuthenticated, getUserTenantIDs } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
+import { validateEndTime, validateTime } from '../lib/time'
 
 const publicOnly: Where = { visibility: { equals: 'public' } }
 
@@ -62,29 +63,33 @@ export const Events: CollectionConfig = {
               pickerAppearance: 'dayOnly',
               displayFormat: 'dd/MM/yyyy',
             },
-            width: '50%',
+            width: '34%',
           },
         },
         {
           name: 'time',
           type: 'text',
           required: true,
-          label: 'Heure',
+          label: 'Début',
           admin: {
             placeholder: 'HH:mm',
-            width: '50%',
+            width: '33%',
           },
-          validate: (value: string | null | undefined) => {
-            if (!value) return true
-            if (!/^\d{2}:\d{2}$/.test(value)) {
-              return 'Format attendu : HH:mm (ex: 20:00)'
-            }
-            const [h, m] = value.split(':').map(Number)
-            if (h < 0 || h > 23 || m < 0 || m > 59) {
-              return 'Heure invalide'
-            }
-            return true
+          validate: validateTime,
+        },
+        {
+          name: 'endTime',
+          type: 'text',
+          label: 'Fin',
+          admin: {
+            placeholder: 'HH:mm',
+            width: '33%',
+            description: 'Optionnelle — sert à détecter les conflits de salle.',
           },
+          validate: (
+            value: string | null | undefined,
+            { siblingData }: { siblingData?: { time?: string | null } },
+          ) => validateEndTime(value, siblingData?.time),
         },
       ],
     },

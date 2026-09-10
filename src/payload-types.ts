@@ -410,6 +410,10 @@ export interface Event {
   date: string;
   time: string;
   /**
+   * Optionnelle — sert à détecter les conflits de salle.
+   */
+  endTime?: string | null;
+  /**
    * Salle utilisée pour cet événement (optionnel)
    */
   room?: (number | null) | Room;
@@ -527,6 +531,9 @@ export interface ServicePlan {
    */
   title?: string | null;
   date: string;
+  time?: string | null;
+  endTime?: string | null;
+  room?: (number | null) | Room;
   /**
    * Rattacher à un rassemblement (week-end d’église, convention…). Optionnel.
    */
@@ -963,6 +970,7 @@ export interface EventsSelect<T extends boolean = true> {
   gathering?: T;
   date?: T;
   time?: T;
+  endTime?: T;
   room?: T;
   location?: T;
   description?: T;
@@ -1016,6 +1024,9 @@ export interface MembersSelect<T extends boolean = true> {
 export interface ServicePlansSelect<T extends boolean = true> {
   title?: T;
   date?: T;
+  time?: T;
+  endTime?: T;
+  room?: T;
   gathering?: T;
   assignments?:
     | T

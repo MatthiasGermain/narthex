@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { Upload, X, Loader2 } from 'lucide-react'
 import { getInitialMedia } from '@/lib/image-utils'
+import { RoomConflictAlert } from '@/components/features/rooms/room-conflict-alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,6 +34,7 @@ interface EventData {
   title?: string
   date?: string
   time?: string
+  endTime?: string
   location?: string
   description?: string
   visibility?: 'public' | 'internal'
@@ -66,6 +68,7 @@ export function EventForm({
   const [title, setTitle] = useState(defaultValues?.title ?? '')
   const [date, setDate] = useState(defaultValues?.date ?? '')
   const [time, setTime] = useState(defaultValues?.time ?? '')
+  const [endTime, setEndTime] = useState(defaultValues?.endTime ?? '')
   const [location, setLocation] = useState(defaultValues?.location ?? '')
   const [roomId, setRoomId] = useState<string>(defaultValues?.room?.toString() ?? '')
   const [description, setDescription] = useState(defaultValues?.description ?? '')
@@ -85,6 +88,9 @@ export function EventForm({
     if (!date) newErrors.date = 'La date est requise'
     if (!time) newErrors.time = "L'heure est requise"
     else if (!/^\d{2}:\d{2}$/.test(time)) newErrors.time = 'Format attendu : HH:mm'
+    if (endTime && time && endTime <= time) {
+      newErrors.endTime = "L'heure de fin doit suivre le début"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -144,6 +150,7 @@ export function EventForm({
           title: title.trim(),
           date,
           time,
+          endTime: endTime || null,
           room: roomId ? Number(roomId) : null,
           location: location.trim() || undefined,
           description: description.trim() || undefined,
@@ -189,8 +196,8 @@ export function EventForm({
         {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
       </div>
 
-      {/* Ligne 2 : Date / Heure / Lieu sur desktop */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Ligne 2 : Date / Début / Fin / Lieu */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="date">Date *</Label>
           <Input
@@ -204,7 +211,7 @@ export function EventForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="time">Heure *</Label>
+          <Label htmlFor="time">Début *</Label>
           <Input
             id="time"
             type="time"
@@ -213,6 +220,19 @@ export function EventForm({
             aria-invalid={!!errors.time}
           />
           {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="endTime">Fin</Label>
+          <Input
+            id="endTime"
+            type="time"
+            value={endTime}
+            min={time || undefined}
+            onChange={(e) => setEndTime(e.target.value)}
+            aria-invalid={!!errors.endTime}
+          />
+          {errors.endTime && <p className="text-sm text-destructive">{errors.endTime}</p>}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -244,6 +264,17 @@ export function EventForm({
             </SelectContent>
           </Select>
         </div>
+      )}
+
+      {roomId && (
+        <RoomConflictAlert
+          kind="event"
+          roomId={roomId}
+          date={date}
+          time={time}
+          endTime={endTime}
+          excludeId={defaultValues?.id}
+        />
       )}
 
       {/* Ligne 3 : Description + Image cote a cote sur desktop */}

@@ -85,6 +85,7 @@ export default async function EditEventPage({
           title: event.title,
           date: dateValue,
           time: event.time,
+          endTime: event.endTime ?? '',
           location: event.location ?? '',
           description: event.description ?? '',
           visibility: event.visibility as 'public' | 'internal',

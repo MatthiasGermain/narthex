@@ -22,7 +22,8 @@ export default async function NewPlanPage({ searchParams }: Props) {
   }
 
   // Charger les membres actifs et les groupes pour les sélecteurs
-  const [{ docs: memberDocs }, { docs: groupDocs }, { docs: gatheringDocs }] = await Promise.all([
+  const [{ docs: memberDocs }, { docs: groupDocs }, { docs: gatheringDocs }, { docs: roomDocs }] =
+    await Promise.all([
     payload.find({
       collection: 'members',
       where: { church: { equals: tenant.id } },
@@ -45,6 +46,15 @@ export default async function NewPlanPage({ searchParams }: Props) {
       collection: 'gatherings',
       where: { church: { equals: tenant.id } },
       sort: '-startDate',
+      limit: 100,
+      depth: 0,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'rooms',
+      where: { church: { equals: tenant.id }, isActive: { equals: true } },
+      sort: 'name',
       limit: 100,
       depth: 0,
       overrideAccess: false,
@@ -75,6 +85,7 @@ export default async function NewPlanPage({ searchParams }: Props) {
       : DEFAULT_SERVICE_ROLES.map((r) => r.label)
 
   const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
+  const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
 
   // Date pré-remplie depuis le calendrier (format YYYY-MM-DD)
   const { date, gathering } = await searchParams
@@ -106,6 +117,7 @@ export default async function NewPlanPage({ searchParams }: Props) {
         members={members}
         groups={groups}
         gatherings={gatherings}
+        rooms={rooms}
         serviceRoles={serviceRoles}
         defaultValues={
           defaultDate || defaultGathering

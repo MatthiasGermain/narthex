@@ -22,11 +22,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RoomConflictAlert } from '@/components/features/rooms/room-conflict-alert'
 
 interface MemberOption {
   id: number
   firstName: string
   lastName: string
+}
+
+interface RoomOption {
+  id: number
+  name: string
 }
 
 interface GatheringOption {
@@ -51,6 +57,9 @@ interface PlanData {
   title?: string
   gathering?: number | null
   date?: string
+  time?: string
+  endTime?: string
+  room?: number | null
   assignments?: AssignmentData[]
   notes?: string
 }
@@ -62,6 +71,7 @@ interface PlanFormProps {
   members: MemberOption[]
   groups?: GroupOption[]
   gatherings?: GatheringOption[]
+  rooms?: RoomOption[]
   serviceRoles: string[]
 }
 
@@ -77,6 +87,7 @@ export function PlanForm({
   members,
   groups = [],
   gatherings = [],
+  rooms = [],
   serviceRoles,
 }: PlanFormProps) {
   const router = useRouter()
@@ -85,6 +96,11 @@ export function PlanForm({
 
   const [title, setTitle] = useState(defaultValues?.title ?? '')
   const [date, setDate] = useState(defaultValues?.date ?? '')
+  const [time, setTime] = useState(defaultValues?.time ?? '')
+  const [endTime, setEndTime] = useState(defaultValues?.endTime ?? '')
+  const [roomId, setRoomId] = useState<string>(
+    defaultValues?.room != null ? String(defaultValues.room) : '',
+  )
   const [notes, setNotes] = useState(defaultValues?.notes ?? '')
   const [gatheringId, setGatheringId] = useState<string>(
     defaultValues?.gathering != null ? String(defaultValues.gathering) : '',
@@ -100,6 +116,10 @@ export function PlanForm({
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
     if (!date) newErrors.date = 'La date est requise'
+    if (roomId && !time) newErrors.time = "Précisez l'heure pour réserver la salle"
+    if (endTime && time && endTime <= time) {
+      newErrors.endTime = "L'heure de fin doit suivre le début"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -162,6 +182,9 @@ export function PlanForm({
         // null (et non undefined) pour qu'un nom effacé le soit aussi côté serveur
         title: title.trim() || null,
         date,
+        time: time || null,
+        endTime: endTime || null,
+        room: roomId ? Number(roomId) : null,
         assignments: assignments
           .filter((a) => a.role.trim())
           .map((a) => ({
@@ -228,6 +251,63 @@ export function PlanForm({
           aria-invalid={!!errors.date}
         />
         {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
+      </div>
+
+      {/* Horaire et salle */}
+      <div className="flex max-w-xl flex-col gap-3">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="plan-time">Début</Label>
+            <Input
+              id="plan-time"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              aria-invalid={!!errors.time}
+            />
+            {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="plan-end-time">Fin</Label>
+            <Input
+              id="plan-end-time"
+              type="time"
+              value={endTime}
+              min={time || undefined}
+              onChange={(e) => setEndTime(e.target.value)}
+              aria-invalid={!!errors.endTime}
+            />
+            {errors.endTime && <p className="text-sm text-destructive">{errors.endTime}</p>}
+          </div>
+          {rooms.length > 0 && (
+            <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
+              <Label htmlFor="plan-room">Salle</Label>
+              <Select value={roomId || 'none'} onValueChange={(v) => setRoomId(v === 'none' ? '' : v)}>
+                <SelectTrigger id="plan-room">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucune salle</SelectItem>
+                  {rooms.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+        {roomId && (
+          <RoomConflictAlert
+            kind="plan"
+            roomId={roomId}
+            date={date}
+            time={time}
+            endTime={endTime}
+            excludeId={defaultValues?.id}
+          />
+        )}
       </div>
 
       {/* Assignments */}
