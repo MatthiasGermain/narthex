@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { toast } from 'sonner'
-import { Upload, X, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2, FileText } from 'lucide-react'
 import { getInitialMedia } from '@/lib/image-utils'
 import { RoomConflictAlert } from '@/components/features/rooms/room-conflict-alert'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,13 @@ interface EventData {
   room?: number | null
   gathering?: number | null
   image?: number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null
+  posterPdf?: number | { id: number; url?: string | null; filename?: string | null } | null
+}
+
+interface AttachedPdf {
+  id: number
+  name: string
+  url: string | null
 }
 
 interface EventFormProps {
@@ -52,6 +59,12 @@ interface EventFormProps {
 }
 
 const getInitialImage = (image: EventData['image']) => getInitialMedia(image)
+
+function getInitialPdf(pdf: EventData['posterPdf']): AttachedPdf | null {
+  if (!pdf) return null
+  if (typeof pdf === 'number') return { id: pdf, name: 'Affiche.pdf', url: null }
+  return { id: pdf.id, name: pdf.filename || 'Affiche.pdf', url: pdf.url ?? null }
+}
 
 export function EventForm({
   mode,
@@ -81,6 +94,10 @@ export function EventForm({
   const [imageId, setImageId] = useState<number | null>(initialImage.id)
   const [imagePreview, setImagePreview] = useState<string | null>(initialImage.preview)
   const [uploading, setUploading] = useState(false)
+
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const [posterPdf, setPosterPdf] = useState<AttachedPdf | null>(getInitialPdf(defaultValues?.posterPdf))
+  const [uploadingPdf, setUploadingPdf] = useState(false)
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
@@ -132,6 +149,44 @@ export function EventForm({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  async function handlePdfUpload(file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Le PDF dépasse la taille maximale de 10 Mo.')
+      if (pdfInputRef.current) pdfInputRef.current.value = ''
+      return
+    }
+
+    setUploadingPdf(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('_payload', JSON.stringify({
+        alt: title.trim() || file.name,
+        church: churchId,
+      }))
+
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        toast.error(data?.errors?.[0]?.message || "Erreur lors de l'upload du PDF")
+        return
+      }
+
+      const data = await res.json()
+      setPosterPdf({ id: data.doc.id, name: data.doc.filename || file.name, url: data.doc.url ?? null })
+    } catch (err) {
+      console.error(err)
+      toast.error("Erreur lors de l'upload du PDF")
+    } finally {
+      setUploadingPdf(false)
+      if (pdfInputRef.current) pdfInputRef.current.value = ''
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
@@ -157,6 +212,7 @@ export function EventForm({
           visibility,
           gathering: gatheringId ? Number(gatheringId) : null,
           image: imageId || '',
+          posterPdf: posterPdf?.id ?? null,
           church: churchId,
         }),
       })
@@ -313,7 +369,7 @@ export function EventForm({
           ) : (
             <div
               onClick={() => !uploading && fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-primary/50 transition-colors h-full min-h-40"
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-primary/50 transition-colors flex-1 min-h-40"
             >
               {uploading ? (
                 <>
@@ -336,6 +392,58 @@ export function EventForm({
             onChange={(e) => {
               const file = e.target.files?.[0]
               if (file) handleImageUpload(file)
+            }}
+          />
+
+          <Label className="mt-2">Affiche en PDF</Label>
+          {posterPdf ? (
+            <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+              {posterPdf.url ? (
+                <a
+                  href={posterPdf.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 truncate text-sm hover:underline"
+                >
+                  {posterPdf.name}
+                </a>
+              ) : (
+                <span className="flex-1 truncate text-sm">{posterPdf.name}</span>
+              )}
+              <button
+                type="button"
+                onClick={() => setPosterPdf(null)}
+                aria-label="Retirer le PDF"
+                className="rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start"
+              disabled={uploadingPdf}
+              onClick={() => pdfInputRef.current?.click()}
+            >
+              {uploadingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              {uploadingPdf ? 'Upload en cours...' : 'Joindre un PDF'}
+            </Button>
+          )}
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handlePdfUpload(file)
             }}
           />
         </div>
@@ -380,7 +488,7 @@ export function EventForm({
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading || uploading}>
+        <Button type="submit" disabled={loading || uploading || uploadingPdf}>
           {loading
             ? (mode === 'create' ? 'Ajout...' : 'Enregistrement...')
             : (mode === 'create' ? 'Ajouter' : 'Enregistrer')

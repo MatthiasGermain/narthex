@@ -18,6 +18,7 @@ import { Members } from './collections/Members'
 import { ServicePlans } from './collections/ServicePlans'
 import { Sermons } from './collections/Sermons'
 import { AudioMedia } from './collections/AudioMedia'
+import { Documents } from './collections/Documents'
 import { Invitations } from './collections/Invitations'
 import { Groups } from './collections/Groups'
 import { Gatherings } from './collections/Gatherings'
@@ -47,7 +48,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, AudioMedia, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members, ServicePlans, Sermons, Invitations, Groups, Gatherings],
+  collections: [Users, Media, AudioMedia, Documents, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members, ServicePlans, Sermons, Invitations, Groups, Gatherings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {
@@ -96,6 +97,7 @@ export default buildConfig({
         },
         media: {},
         'audio-media': {},
+        documents: {},
         'church-branding': {},
         'church-profiles': {},
       },

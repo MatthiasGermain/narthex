@@ -95,6 +95,7 @@ export default async function EditEventPage({
               ? (event.gathering?.id ?? null)
               : ((event.gathering as number | null | undefined) ?? null),
           image: event.image as number | { id: number; url?: string; sizes?: { thumbnail?: { url?: string } }; alt?: string } | null,
+          posterPdf: event.posterPdf ?? null,
         }}
       />
     </div>

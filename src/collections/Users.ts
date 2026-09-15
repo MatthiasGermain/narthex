@@ -4,9 +4,11 @@ import type {
   CollectionAfterLoginHook,
   CollectionConfig,
   CollectionBeforeChangeHook,
+  CollectionBeforeOperationHook,
   FieldAccess,
 } from 'payload'
 import { isSuperAdmin, isSuperAdminCheck, belongsToChurch, getUserTenantIDs } from '../access'
+import { RESET_LINK_EXPIRATION, SIGNUP_LINK_EXPIRATION } from '../lib/password-link'
 
 const updateScopedToTenant = ({ req: { user } }: { req: { user: unknown } }) => {
   if (!user) return false
@@ -143,6 +145,18 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
   return doc
 }
 
+// Durée du lien de mot de passe : 48h quand un admin crée le compte, 3h pour un renouvellement.
+// L'endpoint public accepte `expiration` dans le body, on ne l'honore donc que pour un admin connecté.
+const setPasswordLinkExpiration: CollectionBeforeOperationHook = ({ args, operation, req }) => {
+  if (operation !== 'forgotPassword') return args
+  const role = (req.user as { role?: string } | null)?.role
+  const isAdmin = role === 'super-admin' || role === 'admin-church'
+  const isSignup = isAdmin && (args as { expiration?: number }).expiration === SIGNUP_LINK_EXPIRATION
+  ;(args as { expiration?: number }).expiration = isSignup ? SIGNUP_LINK_EXPIRATION : RESET_LINK_EXPIRATION
+  req.context.passwordLinkIsSignup = isSignup
+  return args
+}
+
 // Update lastLogin timestamp on every login (no req to avoid re-triggering role validation)
 const updateLastLogin: CollectionAfterLoginHook = async ({ req, user }) => {
   await req.payload.update({
@@ -163,7 +177,10 @@ export const Users: CollectionConfig = {
     maxLoginAttempts: 5,
     lockTime: 600000,
     forgotPassword: {
-      generateEmailSubject: () => 'Définissez votre mot de passe — Narthex',
+      generateEmailSubject: (args) =>
+        args?.req?.context.passwordLinkIsSignup
+          ? 'Définissez votre mot de passe — Narthex'
+          : 'Réinitialisez votre mot de passe — Narthex',
       generateEmailHTML: async (args) => {
         const token = args?.token
         const user = args?.user
@@ -190,17 +207,27 @@ export const Users: CollectionConfig = {
         }
 
         const url = `${baseUrl}/login/reset-password?token=${token}`
+        if (req?.context.passwordLinkIsSignup) {
+          return `
+            <h2>Bienvenue sur Narthex</h2>
+            <p>Cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
+            <p><a href="${url}">Définir mon mot de passe</a></p>
+            <p>Ce lien expire dans 48 heures.</p>
+            <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
+          `
+        }
         return `
-          <h2>Bienvenue sur Narthex</h2>
-          <p>Cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
-          <p><a href="${url}">Définir mon mot de passe</a></p>
-          <p>Ce lien expire dans 1 heure.</p>
+          <h2>Réinitialisation de votre mot de passe</h2>
+          <p>Cliquez sur le lien ci-dessous pour choisir un nouveau mot de passe :</p>
+          <p><a href="${url}">Réinitialiser mon mot de passe</a></p>
+          <p>Ce lien expire dans 3 heures.</p>
           <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
         `
       },
     },
   },
   hooks: {
+    beforeOperation: [setPasswordLinkExpiration],
     beforeChange: [enforceAllowedRole, assignTenantOnCreate],
     afterChange: [autoCreateMember],
     // afterLogin: [updateLastLogin], // TODO: fix infinite loop

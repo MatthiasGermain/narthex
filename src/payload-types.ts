@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     'audio-media': AudioMedia;
+    documents: PdfDocument;
     churches: Church;
     'church-branding': ChurchBranding;
     'church-profiles': ChurchProfile;
@@ -91,6 +92,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'audio-media': AudioMediaSelect<false> | AudioMediaSelect<true>;
+    documents: DocumentsSelect<false> | DocumentsSelect<true>;
     churches: ChurchesSelect<false> | ChurchesSelect<true>;
     'church-branding': ChurchBrandingSelect<false> | ChurchBrandingSelect<true>;
     'church-profiles': ChurchProfilesSelect<false> | ChurchProfilesSelect<true>;
@@ -249,6 +251,26 @@ export interface Media {
  * via the `definition` "audio-media".
  */
 export interface AudioMedia {
+  id: number;
+  church?: (number | null) | Church;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents".
+ */
+export interface PdfDocument {
   id: number;
   church?: (number | null) | Church;
   alt: string;
@@ -426,6 +448,10 @@ export interface Event {
    * Image optionnelle pour illustrer l'événement
    */
   image?: (number | null) | Media;
+  /**
+   * PDF optionnel, affiché sur la page de l'événement
+   */
+  posterPdf?: (number | null) | PdfDocument;
   visibility: 'public' | 'internal';
   /**
    * Auto-assigné au créateur
@@ -693,6 +719,10 @@ export interface PayloadLockedDocument {
         value: number | AudioMedia;
       } | null)
     | ({
+        relationTo: 'documents';
+        value: number | PdfDocument;
+      } | null)
+    | ({
         relationTo: 'churches';
         value: number | Church;
       } | null)
@@ -872,6 +902,25 @@ export interface AudioMediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents_select".
+ */
+export interface DocumentsSelect<T extends boolean = true> {
+  church?: T;
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "churches_select".
  */
 export interface ChurchesSelect<T extends boolean = true> {
@@ -989,6 +1038,7 @@ export interface EventsSelect<T extends boolean = true> {
   location?: T;
   description?: T;
   image?: T;
+  posterPdf?: T;
   visibility?: T;
   createdBy?: T;
   church?: T;

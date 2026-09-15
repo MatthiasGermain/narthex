@@ -6,5 +6,6 @@ export const DEFAULT_SERVICE_ROLES = [
   { label: 'Présidence' },
   { label: 'Prédication' },
   { label: 'Louange' },
-  { label: 'Sono / Technique' },
+  { label: 'Sono' },
+  { label: 'Projection' },
 ]

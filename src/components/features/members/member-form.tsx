@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { CHURCH_ROLE_OPTIONS } from '@/lib/church-roles'
+import { SIGNUP_LINK_EXPIRATION } from '@/lib/password-link'
 
 interface MemberData {
   id?: number
@@ -184,7 +185,7 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
     await fetch('/api/users/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userEmail }),
+      body: JSON.stringify({ email: userEmail, expiration: SIGNUP_LINK_EXPIRATION }),
     })
 
     return data.doc.id

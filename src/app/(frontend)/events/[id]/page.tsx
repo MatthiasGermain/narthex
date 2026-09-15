@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, MapPin, Clock, Calendar } from 'lucide-react'
+import { ArrowLeft, MapPin, Clock, Calendar, FileText } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Payload } from 'payload'
 
@@ -76,6 +76,7 @@ export default async function EventDetailPage({
 
   const heroImage = getEventThumb(event.image)
   const heroAlt = getEventAlt(event.image, event.title)
+  const posterPdfUrl = typeof event.posterPdf === 'object' ? (event.posterPdf?.url ?? null) : null
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -138,6 +139,30 @@ export default async function EventDetailPage({
             <ScrollReveal delay={0.2}>
               <div className="mt-8 text-raisin/70 leading-relaxed whitespace-pre-wrap">
                 {event.description}
+              </div>
+            </ScrollReveal>
+          )}
+
+          {posterPdfUrl && (
+            <ScrollReveal delay={0.3}>
+              <div className="mt-10">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="font-heading font-black text-xl uppercase tracking-wide text-raisin">
+                    Affiche
+                  </h2>
+                  <Button asChild variant="raisin" size="sm">
+                    <a href={posterPdfUrl} target="_blank" rel="noopener noreferrer">
+                      <FileText className="h-4 w-4" />
+                      Ouvrir le PDF
+                    </a>
+                  </Button>
+                </div>
+                {/* Aperçu intégré sur écran large : les navigateurs mobiles affichent mal les PDF en iframe */}
+                <iframe
+                  src={`${posterPdfUrl}#view=FitH`}
+                  title={`Affiche — ${event.title}`}
+                  className="hidden sm:block w-full h-[80vh] rounded-lg border border-raisin/10 bg-white"
+                />
               </div>
             </ScrollReveal>
           )}

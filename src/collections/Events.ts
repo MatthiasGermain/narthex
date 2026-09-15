@@ -125,6 +125,15 @@ export const Events: CollectionConfig = {
       },
     },
     {
+      name: 'posterPdf',
+      type: 'upload',
+      relationTo: 'documents',
+      label: 'Affiche en PDF',
+      admin: {
+        description: 'PDF optionnel, affiché sur la page de l\'événement',
+      },
+    },
+    {
       name: 'visibility',
       type: 'select',
       required: true,
