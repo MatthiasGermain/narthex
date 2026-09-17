@@ -57,17 +57,25 @@ export default async function PlanningPage({ searchParams }: Props) {
     where: {
       church: { equals: tenant.id },
     },
-    sort: 'date',
+    // Les 50 plus récents (à venir compris), pas les 50 plus anciens
+    sort: '-date',
     limit: 50,
     depth: 2,
     overrideAccess: false,
     user,
   })
 
-  // À venir : du plus proche au plus lointain (croissant).
-  // Passés : du plus récent au plus ancien (décroissant).
+  // Du jour le plus récent au plus ancien ; un même jour, dans l'ordre de la
+  // journée (10h avant 14h). Sans heure : en fin de journée.
+  const dayOf = (iso: string) => iso.slice(0, 10)
+  plans.sort(
+    (a, b) =>
+      dayOf(b.date).localeCompare(dayOf(a.date)) ||
+      (a.time || '99:99').localeCompare(b.time || '99:99'),
+  )
+
   const upcoming = plans.filter((p) => !isPast(p.date))
-  const past = plans.filter((p) => isPast(p.date)).reverse()
+  const past = plans.filter((p) => isPast(p.date))
   const upcomingIds = upcoming.map((p) => p.id)
   const pastIds = past.map((p) => p.id)
 

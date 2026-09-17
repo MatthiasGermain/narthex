@@ -23,6 +23,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RoomConflictAlert } from '@/components/features/rooms/room-conflict-alert'
+import type { PlanLockOwner } from '@/lib/plan-lock'
+import { usePlanLock } from './use-plan-lock'
+import { PlanLockBanner } from './plan-lock-banner'
 
 interface MemberOption {
   id: number
@@ -73,6 +76,10 @@ interface PlanFormProps {
   gatherings?: GatheringOption[]
   rooms?: RoomOption[]
   serviceRoles: string[]
+  /** Édition : verrou déjà tenu par quelqu'un d'autre à l'ouverture de la page. */
+  initialLockedBy?: PlanLockOwner | null
+  /** Édition : version chargée du culte, pour repérer une modification pendant une absence. */
+  planUpdatedAt?: string
 }
 
 /** Le rôle « Louange » accepte la sélection d'un groupe entier. */
@@ -89,8 +96,15 @@ export function PlanForm({
   gatherings = [],
   rooms = [],
   serviceRoles,
+  initialLockedBy = null,
+  planUpdatedAt,
 }: PlanFormProps) {
   const router = useRouter()
+  const lock = usePlanLock(
+    mode === 'edit' ? defaultValues?.id : undefined,
+    initialLockedBy,
+    planUpdatedAt,
+  )
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -168,7 +182,7 @@ export function PlanForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!validate()) return
+    if (lock.readOnly || !validate()) return
 
     setLoading(true)
 
@@ -204,6 +218,13 @@ export function PlanForm({
         body: JSON.stringify(body),
       })
 
+      // 423 : Payload refuse, quelqu'un d'autre tient le verrou de ce culte.
+      if (res.status === 423) {
+        toast.error("Quelqu'un d'autre modifie ce culte : vos changements n'ont pas été enregistrés.")
+        void lock.recheck()
+        return
+      }
+
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         const message = data?.errors?.[0]?.message || 'Une erreur est survenue'
@@ -211,6 +232,7 @@ export function PlanForm({
         return
       }
 
+      lock.markSaved()
       toast.success(
         mode === 'create' ? 'Culte créé' : 'Culte modifié',
       )
@@ -226,272 +248,278 @@ export function PlanForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
-      {/* Nom */}
-      <div className="flex flex-col gap-2 max-w-md">
-        <Label htmlFor="title">Nom du culte</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Culte"
-        />
-        <p className="text-sm text-muted-foreground">
-          Optionnel — laissez vide pour afficher simplement « Culte ».
-        </p>
-      </div>
+      <PlanLockBanner status={lock.status} lockedBy={lock.lockedBy} />
 
-      {/* Date */}
-      <div className="flex flex-col gap-2 max-w-xs">
-        <Label htmlFor="date">Date du culte *</Label>
-        <Input
-          id="date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          aria-invalid={!!errors.date}
-        />
-        {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
-      </div>
+      {/* Lecture seule tant que quelqu'un d'autre tient le verrou */}
+      <fieldset disabled={lock.readOnly} className="flex min-w-0 flex-col gap-6">
+        {/* Nom */}
+        <div className="flex flex-col gap-2 max-w-md">
+          <Label htmlFor="title">Nom du culte</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Culte"
+          />
+          <p className="text-sm text-muted-foreground">
+            Optionnel — laissez vide pour afficher simplement « Culte ».
+          </p>
+        </div>
 
-      {/* Horaire et salle */}
-      <div className="flex max-w-xl flex-col gap-3">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="plan-time">Début</Label>
-            <Input
-              id="plan-time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              aria-invalid={!!errors.time}
-            />
-            {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="plan-end-time">Fin</Label>
-            <Input
-              id="plan-end-time"
-              type="time"
-              value={endTime}
-              min={time || undefined}
-              onChange={(e) => setEndTime(e.target.value)}
-              aria-invalid={!!errors.endTime}
-            />
-            {errors.endTime && <p className="text-sm text-destructive">{errors.endTime}</p>}
-          </div>
-          {rooms.length > 0 && (
-            <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
-              <Label htmlFor="plan-room">Salle</Label>
-              <Select value={roomId || 'none'} onValueChange={(v) => setRoomId(v === 'none' ? '' : v)}>
-                <SelectTrigger id="plan-room">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Aucune salle</SelectItem>
-                  {rooms.map((r) => (
-                    <SelectItem key={r.id} value={String(r.id)}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Date */}
+        <div className="flex flex-col gap-2 max-w-xs">
+          <Label htmlFor="date">Date du culte *</Label>
+          <Input
+            id="date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            aria-invalid={!!errors.date}
+          />
+          {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
+        </div>
+
+        {/* Horaire et salle */}
+        <div className="flex max-w-xl flex-col gap-3">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="plan-time">Début</Label>
+              <Input
+                id="plan-time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                aria-invalid={!!errors.time}
+              />
+              {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="plan-end-time">Fin</Label>
+              <Input
+                id="plan-end-time"
+                type="time"
+                value={endTime}
+                min={time || undefined}
+                onChange={(e) => setEndTime(e.target.value)}
+                aria-invalid={!!errors.endTime}
+              />
+              {errors.endTime && <p className="text-sm text-destructive">{errors.endTime}</p>}
+            </div>
+            {rooms.length > 0 && (
+              <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
+                <Label htmlFor="plan-room">Salle</Label>
+                <Select value={roomId || 'none'} onValueChange={(v) => setRoomId(v === 'none' ? '' : v)}>
+                  <SelectTrigger id="plan-room">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucune salle</SelectItem>
+                    {rooms.map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          {roomId && (
+            <RoomConflictAlert
+              kind="plan"
+              roomId={roomId}
+              date={date}
+              time={time}
+              endTime={endTime}
+              excludeId={defaultValues?.id}
+            />
           )}
         </div>
-        {roomId && (
-          <RoomConflictAlert
-            kind="plan"
-            roomId={roomId}
-            date={date}
-            time={time}
-            endTime={endTime}
-            excludeId={defaultValues?.id}
-          />
-        )}
-      </div>
 
-      {/* Assignments */}
-      <div className="flex flex-col gap-3">
-        <Label>Affectations</Label>
+        {/* Assignments */}
         <div className="flex flex-col gap-3">
-          {assignments.map((assignment, index) => (
-            <div key={index} className="flex items-start gap-3 rounded-lg border p-3">
-              {/* Rôle */}
-              <div className="flex flex-col gap-1 w-44 shrink-0">
-                <Input
-                  value={assignment.role}
-                  onChange={(e) => updateAssignmentRole(index, e.target.value)}
-                  placeholder="Rôle"
-                  className="text-sm"
-                />
+          <Label>Affectations</Label>
+          <div className="flex flex-col gap-3">
+            {assignments.map((assignment, index) => (
+              <div key={index} className="flex items-start gap-3 rounded-lg border p-3">
+                {/* Rôle */}
+                <div className="flex flex-col gap-1 w-44 shrink-0">
+                  <Input
+                    value={assignment.role}
+                    onChange={(e) => updateAssignmentRole(index, e.target.value)}
+                    placeholder="Rôle"
+                    className="text-sm"
+                  />
+                </div>
+
+                {/* Membres sélectionnés + sélecteur */}
+                <div className="flex-1 flex flex-wrap items-center gap-2 min-h-9">
+                  {assignment.memberIds.map((id) => (
+                    <Badge key={id} variant="secondary" className="gap-1">
+                      {getMemberName(id)}
+                      <button
+                        type="button"
+                        onClick={() => toggleMember(index, id)}
+                        className="ml-0.5 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="h-7 text-xs">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Membre
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 max-h-60 overflow-y-auto p-2" align="start">
+                      {members.length === 0 ? (
+                        <p className="text-sm text-muted-foreground p-2">Aucun membre</p>
+                      ) : (
+                        members.map((m) => (
+                          <label
+                            key={m.id}
+                            className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={assignment.memberIds.includes(m.id)}
+                              onCheckedChange={() => toggleMember(index, m.id)}
+                            />
+                            <span className="text-sm">
+                              {m.firstName} {m.lastName}
+                            </span>
+                          </label>
+                        ))
+                      )}
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Groupe assigné (rôle Louange uniquement) */}
+                  {isWorshipRole(assignment.role) && (
+                    <>
+                      {assignment.groupId != null &&
+                        (() => {
+                          const g = getGroup(assignment.groupId)
+                          return g ? (
+                            <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary">
+                              {g.name}
+                              {g.leaderName ? ` — ${g.leaderName}` : ''}
+                              <button
+                                type="button"
+                                onClick={() => setAssignmentGroup(index, null)}
+                                className="ml-0.5 hover:text-destructive"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ) : null
+                        })()}
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" size="sm" className="h-7 text-xs">
+                            <Plus className="h-3 w-3 mr-1" />
+                            Groupe
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 max-h-60 overflow-y-auto p-2" align="start">
+                          {groups.length === 0 ? (
+                            <p className="text-sm text-muted-foreground p-2">Aucun groupe</p>
+                          ) : (
+                            groups.map((g) => (
+                              <label
+                                key={g.id}
+                                className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted cursor-pointer"
+                              >
+                                <Checkbox
+                                  checked={assignment.groupId === g.id}
+                                  onCheckedChange={() =>
+                                    setAssignmentGroup(index, assignment.groupId === g.id ? null : g.id)
+                                  }
+                                />
+                                <span className="text-sm">
+                                  {g.name}
+                                  {g.leaderName && (
+                                    <span className="text-muted-foreground"> — {g.leaderName}</span>
+                                  )}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                    </>
+                  )}
+                </div>
+
+                {/* Supprimer le rôle */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeAssignment(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
+            ))}
+          </div>
 
-              {/* Membres sélectionnés + sélecteur */}
-              <div className="flex-1 flex flex-wrap items-center gap-2 min-h-9">
-                {assignment.memberIds.map((id) => (
-                  <Badge key={id} variant="secondary" className="gap-1">
-                    {getMemberName(id)}
-                    <button
-                      type="button"
-                      onClick={() => toggleMember(index, id)}
-                      className="ml-0.5 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Membre
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 max-h-60 overflow-y-auto p-2" align="start">
-                    {members.length === 0 ? (
-                      <p className="text-sm text-muted-foreground p-2">Aucun membre</p>
-                    ) : (
-                      members.map((m) => (
-                        <label
-                          key={m.id}
-                          className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={assignment.memberIds.includes(m.id)}
-                            onCheckedChange={() => toggleMember(index, m.id)}
-                          />
-                          <span className="text-sm">
-                            {m.firstName} {m.lastName}
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </PopoverContent>
-                </Popover>
-
-                {/* Groupe assigné (rôle Louange uniquement) */}
-                {isWorshipRole(assignment.role) && (
-                  <>
-                    {assignment.groupId != null &&
-                      (() => {
-                        const g = getGroup(assignment.groupId)
-                        return g ? (
-                          <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary">
-                            {g.name}
-                            {g.leaderName ? ` — ${g.leaderName}` : ''}
-                            <button
-                              type="button"
-                              onClick={() => setAssignmentGroup(index, null)}
-                              className="ml-0.5 hover:text-destructive"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ) : null
-                      })()}
-
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button type="button" variant="outline" size="sm" className="h-7 text-xs">
-                          <Plus className="h-3 w-3 mr-1" />
-                          Groupe
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-64 max-h-60 overflow-y-auto p-2" align="start">
-                        {groups.length === 0 ? (
-                          <p className="text-sm text-muted-foreground p-2">Aucun groupe</p>
-                        ) : (
-                          groups.map((g) => (
-                            <label
-                              key={g.id}
-                              className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted cursor-pointer"
-                            >
-                              <Checkbox
-                                checked={assignment.groupId === g.id}
-                                onCheckedChange={() =>
-                                  setAssignmentGroup(index, assignment.groupId === g.id ? null : g.id)
-                                }
-                              />
-                              <span className="text-sm">
-                                {g.name}
-                                {g.leaderName && (
-                                  <span className="text-muted-foreground"> — {g.leaderName}</span>
-                                )}
-                              </span>
-                            </label>
-                          ))
-                        )}
-                      </PopoverContent>
-                    </Popover>
-                  </>
-                )}
-              </div>
-
-              {/* Supprimer le rôle */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => removeAssignment(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="self-start"
-          onClick={addAssignment}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter un rôle
-        </Button>
-      </div>
-
-      {/* Notes */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          placeholder="Informations complémentaires pour ce dimanche..."
-          rows={3}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-      </div>
-
-      {/* Rattachement : masque tant que l'eglise n'a cree aucun rassemblement */}
-      {gatherings.length > 0 && (
-        <div className="flex flex-col gap-2 max-w-md">
-          <Label htmlFor="plan-gathering">Fait partie de</Label>
-          <Select
-            value={gatheringId || 'none'}
-            onValueChange={(v) => setGatheringId(v === 'none' ? '' : v)}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="self-start"
+            onClick={addAssignment}
           >
-            <SelectTrigger id="plan-gathering">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Aucun rassemblement</SelectItem>
-              {gatherings.map((g) => (
-                <SelectItem key={g.id} value={String(g.id)}>
-                  {g.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter un rôle
+          </Button>
         </div>
-      )}
+
+        {/* Notes */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            placeholder="Informations complémentaires pour ce dimanche..."
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
+
+        {/* Rattachement : masque tant que l'eglise n'a cree aucun rassemblement */}
+        {gatherings.length > 0 && (
+          <div className="flex flex-col gap-2 max-w-md">
+            <Label htmlFor="plan-gathering">Fait partie de</Label>
+            <Select
+              value={gatheringId || 'none'}
+              onValueChange={(v) => setGatheringId(v === 'none' ? '' : v)}
+            >
+              <SelectTrigger id="plan-gathering">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun rassemblement</SelectItem>
+                {gatherings.map((g) => (
+                  <SelectItem key={g.id} value={String(g.id)}>
+                    {g.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+      </fieldset>
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || lock.readOnly}>
           {loading
             ? mode === 'create'
               ? 'Création...'

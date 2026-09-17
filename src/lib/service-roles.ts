@@ -8,4 +8,5 @@ export const DEFAULT_SERVICE_ROLES = [
   { label: 'Louange' },
   { label: 'Sono' },
   { label: 'Projection' },
+  { label: 'Kids Club' },
 ]

@@ -204,6 +204,12 @@ export interface Church {
           id?: string | null;
         }[]
       | null;
+    /**
+     * Pré-rempli à la création d’un culte
+     */
+    defaultServiceTime?: string | null;
+    defaultServiceEndTime?: string | null;
+    defaultServiceRoom?: (number | null) | Room;
   };
   updatedAt: string;
   createdAt: string;
@@ -938,6 +944,9 @@ export interface ChurchesSelect<T extends boolean = true> {
               label?: T;
               id?: T;
             };
+        defaultServiceTime?: T;
+        defaultServiceEndTime?: T;
+        defaultServiceRoom?: T;
       };
   updatedAt?: T;
   createdAt?: T;

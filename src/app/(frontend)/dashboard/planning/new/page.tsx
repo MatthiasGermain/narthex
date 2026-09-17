@@ -87,6 +87,13 @@ export default async function NewPlanPage({ searchParams }: Props) {
   const gatherings = gatheringDocs.map((g) => ({ id: g.id, title: g.title }))
   const rooms = roomDocs.map((r) => ({ id: r.id, name: r.name }))
 
+  // Horaire et salle habituels, réglés dans les paramètres de l'église
+  const settings = tenant.settings
+  const defaultRoomId =
+    typeof settings?.defaultServiceRoom === 'object'
+      ? settings.defaultServiceRoom?.id
+      : settings?.defaultServiceRoom
+
   // Date pré-remplie depuis le calendrier (format YYYY-MM-DD)
   const { date, gathering } = await searchParams
   const defaultDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined
@@ -119,11 +126,17 @@ export default async function NewPlanPage({ searchParams }: Props) {
         gatherings={gatherings}
         rooms={rooms}
         serviceRoles={serviceRoles}
-        defaultValues={
-          defaultDate || defaultGathering
-            ? { date: defaultDate, gathering: defaultGathering }
-            : undefined
-        }
+        defaultValues={{
+          date: defaultDate,
+          gathering: defaultGathering,
+          time: settings?.defaultServiceTime ?? undefined,
+          endTime: settings?.defaultServiceEndTime ?? undefined,
+          // Salle désactivée ou supprimée depuis : on ne la propose pas
+          room:
+            defaultRoomId != null && rooms.some((r) => r.id === defaultRoomId)
+              ? defaultRoomId
+              : undefined,
+        }}
       />
     </div>
   )

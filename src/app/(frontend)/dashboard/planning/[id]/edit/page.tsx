@@ -4,6 +4,7 @@ import { ArrowLeft, Megaphone } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
 import { DEFAULT_SERVICE_ROLES } from '@/lib/service-roles'
+import { getPlanLockOwner } from '@/lib/plan-lock'
 import { PlanForm } from '@/components/features/planning/plan-form'
 import { Button } from '@/components/ui/button'
 
@@ -100,6 +101,9 @@ export default async function EditPlanPage({
     }
   })
 
+  // Quelqu'un d'autre a-t-il déjà ce culte ouvert en modification ?
+  const initialLockedBy = await getPlanLockOwner(payload, plan.id, user.id)
+
   // Rôles configurés par l'église
   const serviceRoles =
     tenant.settings?.serviceRoles && tenant.settings.serviceRoles.length > 0
@@ -159,6 +163,8 @@ export default async function EditPlanPage({
         gatherings={gatherings}
         rooms={rooms}
         serviceRoles={serviceRoles}
+        initialLockedBy={initialLockedBy}
+        planUpdatedAt={plan.updatedAt}
         defaultValues={{
           id: plan.id,
           title: plan.title ?? '',

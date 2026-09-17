@@ -1,6 +1,7 @@
 import type { CollectionConfig, CollectionBeforeValidateHook } from 'payload'
 import { isSuperAdmin, readOwnChurchById } from '../access'
 import { DEFAULT_SERVICE_ROLES } from '../lib/service-roles'
+import { validateEndTime, validateTime } from '../lib/time'
 import { cacheTags, safeRevalidateTag } from '../lib/cache'
 
 function revalidateChurch(doc?: { slug?: string | null; domain?: string | null } | null) {
@@ -113,6 +114,39 @@ export const Churches: CollectionConfig = {
               type: 'text',
               required: true,
               label: 'Nom du rôle',
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'defaultServiceTime',
+              type: 'text',
+              label: 'Début des cultes',
+              admin: {
+                placeholder: 'HH:mm',
+                width: '33%',
+                description: 'Pré-rempli à la création d’un culte',
+              },
+              validate: validateTime,
+            },
+            {
+              name: 'defaultServiceEndTime',
+              type: 'text',
+              label: 'Fin des cultes',
+              admin: { placeholder: 'HH:mm', width: '33%' },
+              validate: (
+                value: string | null | undefined,
+                { siblingData }: { siblingData?: { defaultServiceTime?: string | null } },
+              ) => validateEndTime(value, siblingData?.defaultServiceTime),
+            },
+            {
+              name: 'defaultServiceRoom',
+              type: 'relationship',
+              relationTo: 'rooms',
+              label: 'Salle des cultes',
+              admin: { width: '34%' },
             },
           ],
         },

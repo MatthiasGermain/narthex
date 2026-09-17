@@ -2,9 +2,12 @@ import type { CollectionConfig } from 'payload'
 import { isAdmin, readOwnChurch } from '../access'
 import { assignCreatedBy } from './hooks'
 import { validateEndTime, validateTime } from '../lib/time'
+import { PLAN_LOCK_DURATION_S } from '../lib/plan-lock'
 
 export const ServicePlans: CollectionConfig = {
   slug: 'service-plans',
+  // Même durée pour le dashboard et l'admin : un verrou non prolongé expire au bout de 3 min.
+  lockDocuments: { duration: PLAN_LOCK_DURATION_S },
   admin: {
     useAsTitle: 'date',
     group: 'Église',
