@@ -216,6 +216,31 @@ export interface Church {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rooms".
+ */
+export interface Room {
+  id: number;
+  name: string;
+  capacity?: number | null;
+  floor?: string | null;
+  description?: string | null;
+  equipment?: ('projector' | 'sound' | 'piano' | 'wifi' | 'kitchen' | 'board')[] | null;
+  image?: (number | null) | Media;
+  accessibility?: boolean | null;
+  isActive?: boolean | null;
+  /**
+   * Auto-assigné au créateur
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Auto-assigné à votre église
+   */
+  church?: (number | null) | Church;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -489,31 +514,6 @@ export interface Gathering {
    */
   location?: string | null;
   description?: string | null;
-  createdBy?: (number | null) | User;
-  /**
-   * Auto-assigné à votre église
-   */
-  church?: (number | null) | Church;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "rooms".
- */
-export interface Room {
-  id: number;
-  name: string;
-  capacity?: number | null;
-  floor?: string | null;
-  description?: string | null;
-  equipment?: ('projector' | 'sound' | 'piano' | 'wifi' | 'kitchen' | 'board')[] | null;
-  image?: (number | null) | Media;
-  accessibility?: boolean | null;
-  isActive?: boolean | null;
-  /**
-   * Auto-assigné au créateur
-   */
   createdBy?: (number | null) | User;
   /**
    * Auto-assigné à votre église

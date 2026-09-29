@@ -92,7 +92,12 @@ const assignTenantOnCreate: CollectionBeforeChangeHook = ({ req, operation, data
   return data
 }
 
-// Auto-create a Member entry when a new User is created (if not already linked)
+/**
+ * Rattache un nouveau User à une fiche membre — un compte = une fiche, toujours.
+ * Ordre de résolution : la fiche désignée par l'appelant, puis une fiche déjà
+ * liée, puis une fiche de l'église qui porte le même email et n'a pas de compte,
+ * et seulement en dernier recours une nouvelle fiche déduite de l'email.
+ */
 const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
   if (operation !== 'create') return doc
 
@@ -109,7 +114,23 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
       : tenants[0].tenant,
   )
 
-  // Check if a Member already exists linked to this user
+  const linkMember = (memberId: number | string) =>
+    req.payload.update({
+      collection: 'members',
+      id: memberId,
+      data: { user: doc.id },
+      overrideAccess: true,
+      req,
+    })
+
+  // 1. L'appelant a déjà la fiche à rattacher (création de compte depuis une fiche membre)
+  const linkMemberId = req.context.linkMemberId as number | undefined
+  if (linkMemberId) {
+    await linkMember(linkMemberId)
+    return doc
+  }
+
+  // 2. Une fiche pointe déjà sur ce compte : rien à faire
   const existing = await req.payload.find({
     collection: 'members',
     where: { user: { equals: doc.id } },
@@ -121,8 +142,28 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
 
   if (existing.docs.length > 0) return doc
 
-  // Extract name from email (fallback)
-  const emailParts = (doc.email as string).split('@')[0].split('.')
+  // 3. Une fiche de l'église porte déjà cet email sans compte : on la rattache
+  //    plutôt que d'en créer une seconde. `like` fait un ILIKE %…% côté Postgres,
+  //    d'où le filtrage exact ensuite (members.email n'est pas indexé unique).
+  const email = ((doc.email as string) || '').toLowerCase().trim()
+  const sameEmail = await req.payload.find({
+    collection: 'members',
+    where: { church: { equals: tenantId }, email: { like: email } },
+    limit: 20,
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+  const orphan = sameEmail.docs.find(
+    (m) => !m.user && m.email?.toLowerCase().trim() === email,
+  )
+  if (orphan) {
+    await linkMember(orphan.id)
+    return doc
+  }
+
+  // 4. Aucune fiche existante : on en crée une à partir de l'email
+  const emailParts = email.split('@')[0].split('.')
   const firstName = emailParts[0]?.charAt(0).toUpperCase() + (emailParts[0]?.slice(1) || '')
   const lastName = emailParts[1]
     ? emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1)
@@ -133,7 +174,7 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
     data: {
       firstName,
       lastName: lastName || firstName,
-      email: doc.email as string,
+      email,
       churchRole: 'membre',
       user: doc.id,
       church: tenantId,
@@ -146,12 +187,15 @@ const autoCreateMember: CollectionAfterChangeHook = async ({ doc, operation, req
 }
 
 // Durée du lien de mot de passe : 48h quand un admin crée le compte, 3h pour un renouvellement.
-// L'endpoint public accepte `expiration` dans le body, on ne l'honore donc que pour un admin connecté.
+// L'endpoint public accepte `expiration` dans le body, on ne l'honore donc que pour un admin
+// connecté — ou pour un appel serveur qui pose explicitement `context.isSignupLink`.
 const setPasswordLinkExpiration: CollectionBeforeOperationHook = ({ args, operation, req }) => {
   if (operation !== 'forgotPassword') return args
   const role = (req.user as { role?: string } | null)?.role
   const isAdmin = role === 'super-admin' || role === 'admin-church'
-  const isSignup = isAdmin && (args as { expiration?: number }).expiration === SIGNUP_LINK_EXPIRATION
+  const isSignup =
+    req.context.isSignupLink === true ||
+    (isAdmin && (args as { expiration?: number }).expiration === SIGNUP_LINK_EXPIRATION)
   ;(args as { expiration?: number }).expiration = isSignup ? SIGNUP_LINK_EXPIRATION : RESET_LINK_EXPIRATION
   req.context.passwordLinkIsSignup = isSignup
   return args

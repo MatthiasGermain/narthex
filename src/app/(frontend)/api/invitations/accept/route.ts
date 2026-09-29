@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     overrideAccess: true,
   })
 
-  // 4. Mettre à jour le Member auto-créé avec les vrais noms
+  // 4. Le hook a rattaché la fiche membre (existante ou nouvelle) : on y pose les vrais noms
   const members = await payload.find({
     collection: 'members',
     where: { user: { equals: newUser.id } },
@@ -113,31 +113,6 @@ export async function POST(req: NextRequest) {
       },
       overrideAccess: true,
     })
-  } else {
-    // Cas où le Member n'a pas été auto-créé — vérifier s'il existe un Member existant avec cet email
-    const existingMembers = await payload.find({
-      collection: 'members',
-      where: {
-        email: { equals: invitation.email },
-        church: { equals: churchId },
-      },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-    })
-
-    if (existingMembers.docs.length > 0) {
-      await payload.update({
-        collection: 'members',
-        id: existingMembers.docs[0].id,
-        data: {
-          user: newUser.id,
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-        },
-        overrideAccess: true,
-      })
-    }
   }
 
   // 5. Marquer l'invitation comme acceptée

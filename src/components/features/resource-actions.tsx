@@ -56,7 +56,8 @@ export function ResourceActions({
     try {
       const res = await fetch(`/api/${collection}/${resourceId}`, { method: 'DELETE' })
       if (!res.ok) {
-        toast.error(labels.deleteError)
+        const data = await res.json().catch(() => null)
+        toast.error(data?.errors?.[0]?.message || labels.deleteError)
         return
       }
       toast.success(labels.deleteSuccess)

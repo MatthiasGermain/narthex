@@ -18,6 +18,10 @@ const prepareInvitation: CollectionBeforeChangeHook = async ({ req, operation, d
 
   if (!user) throw new Error('Non authentifié')
 
+  // Les emails des comptes sont minusculés par Payload : on aligne pour que les
+  // contrôles de doublon ci-dessous ne soient pas contournés par la casse.
+  if (typeof data.email === 'string') data.email = data.email.toLowerCase().trim()
+
   // Auto-set invitedBy
   data.invitedBy = user.id
 

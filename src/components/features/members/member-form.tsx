@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { CHURCH_ROLE_OPTIONS } from '@/lib/church-roles'
-import { SIGNUP_LINK_EXPIRATION } from '@/lib/password-link'
+import { createAccountForMember } from '@/app/(frontend)/dashboard/members/actions'
 
 interface MemberData {
   id?: number
@@ -68,9 +68,8 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
   const [photoPreview, setPhotoPreview] = useState<string | null>(initialPhoto.preview)
   const [uploading, setUploading] = useState(false)
 
-  const initialUser = getLinkedUser(defaultValues?.user)
-  const [linkedUserId, setLinkedUserId] = useState<number | null>(initialUser.id)
-  const [linkedUserEmail, setLinkedUserEmail] = useState<string | null>(initialUser.email)
+  // Le rattachement d'un compte est piloté côté serveur : pas de délier ici.
+  const { id: linkedUserId, email: linkedUserEmail } = getLinkedUser(defaultValues?.user)
 
   const [createAccount, setCreateAccount] = useState(false)
   const [userRoleValue, setUserRoleValue] = useState(linkedUserRole || 'volunteer')
@@ -161,36 +160,6 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  async function handleCreateUserAccount(): Promise<number> {
-    const userEmail = email.trim()
-    const randomPassword = crypto.randomUUID()
-
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: userEmail,
-        password: randomPassword,
-        role: 'volunteer',
-        tenants: [{ tenant: churchId }],
-      }),
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => null)
-      throw new Error(data?.errors?.[0]?.message || 'Erreur lors de la création du compte')
-    }
-    const data = await res.json()
-
-    // Déclencher l'envoi de l'email d'invitation (reset password)
-    await fetch('/api/users/forgot-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userEmail, expiration: SIGNUP_LINK_EXPIRATION }),
-    })
-
-    return data.doc.id
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
@@ -198,31 +167,9 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
     setLoading(true)
 
     try {
-      let userIdToLink = linkedUserId
-      let autoCreatedMemberId: number | null = null
-
-      if (createAccount && !linkedUserId) {
-        try {
-          userIdToLink = await handleCreateUserAccount()
-          toast.success('Compte créé — invitation envoyée par email')
-
-          // The autoCreateMember hook may have created a member — find it
-          const searchRes = await fetch(
-            `/api/members?where[user][equals]=${userIdToLink}&limit=1&depth=0`,
-          )
-          if (searchRes.ok) {
-            const searchData = await searchRes.json()
-            if (searchData.docs?.length > 0) {
-              autoCreatedMemberId = searchData.docs[0].id
-            }
-          }
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : 'Erreur lors de la création du compte')
-          setLoading(false)
-          return
-        }
-      }
-
+      // La fiche est toujours enregistrée d'abord : le compte se greffe dessus,
+      // ce qui évite la fiche fantôme créée par le hook quand il ne sait pas
+      // à qui rattacher le nouveau compte.
       const memberBody = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -231,38 +178,39 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
         churchRole,
         birthDate: birthDate || undefined,
         photo: photoId || '',
-        user: userIdToLink || '',
         church: churchId,
       }
 
-      // Determine URL and method:
-      // - edit mode → PATCH existing
-      // - hook auto-created a member → PATCH that one
-      // - otherwise → POST new
-      let url: string
-      let method: string
-      if (mode === 'edit' && defaultValues?.id) {
-        url = `/api/members/${defaultValues.id}`
-        method = 'PATCH'
-      } else if (autoCreatedMemberId) {
-        url = `/api/members/${autoCreatedMemberId}`
-        method = 'PATCH'
-      } else {
-        url = '/api/members'
-        method = 'POST'
-      }
-
-      const res = await fetch(url, {
-        method,
+      const isEdit = mode === 'edit' && Boolean(defaultValues?.id)
+      const res = await fetch(isEdit ? `/api/members/${defaultValues!.id}` : '/api/members', {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(memberBody),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        const message = data?.errors?.[0]?.message || 'Une erreur est survenue'
+        const message =
+          data?.errors?.[0]?.data?.errors?.[0]?.message ||
+          data?.errors?.[0]?.message ||
+          'Une erreur est survenue'
         toast.error(message)
         return
+      }
+
+      const saved = await res.json()
+      const memberId: number = isEdit ? defaultValues!.id! : saved.doc.id
+
+      if (createAccount && !linkedUserId) {
+        const result = await createAccountForMember(memberId)
+        if (!result.ok) {
+          // La fiche est enregistrée : on renvoie dessus pour réessayer le compte.
+          toast.error(result.error)
+          router.push(`/dashboard/members/${memberId}/edit`)
+          router.refresh()
+          return
+        }
+        toast.success('Compte créé — invitation envoyée par email')
       }
 
       toast.success(mode === 'create' ? 'Membre ajouté' : 'Membre modifié')
@@ -418,24 +366,14 @@ export function MemberForm({ mode, defaultValues, churchId, userRole, currentUse
 
             {linkedUserId ? (
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Compte lié</p>
-                    <p className="text-sm text-muted-foreground">
-                      {linkedUserEmail || `Utilisateur #${linkedUserId}`}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setLinkedUserId(null)
-                      setLinkedUserEmail(null)
-                    }}
-                  >
-                    Délier
-                  </Button>
+                <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted">
+                  <p className="text-sm font-medium">Compte lié</p>
+                  <p className="text-sm text-muted-foreground">
+                    {linkedUserEmail || `Utilisateur #${linkedUserId}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Supprimer ce membre supprimera aussi son compte Narthex.
+                  </p>
                 </div>
 
                 {/* Sélecteur de rôle */}

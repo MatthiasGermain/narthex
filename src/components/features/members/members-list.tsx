@@ -185,6 +185,7 @@ function MemberCard({
                   memberId={member.id}
                   memberName={`${member.firstName} ${member.lastName}`}
                   canDelete={isAdmin}
+                  hasAccount={member.hasAccount}
                 />
               </div>
             )}

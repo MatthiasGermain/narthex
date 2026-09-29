@@ -67,6 +67,11 @@ export function StaggeredMenu({
   const itemEntranceTweenRef = useRef<gsap.core.Tween | null>(null)
   const busyRef = useRef(false)
 
+  // Le panneau passe par un portail vers <body> : on ne le rend qu'une fois monté
+  // dans le navigateur, sinon le HTML serveur diffère du premier rendu client.
+  const [mounted, setMounted] = useState(false)
+  React.useEffect(() => setMounted(true), [])
+
   const offscreen = side === 'right' ? 100 : -100
   const positionClass = side === 'right' ? 'right-0' : 'left-0'
 
@@ -93,7 +98,8 @@ export function StaggeredMenu({
       gsap.set(textInner, { yPercent: 0 })
     })
     return () => ctx.revert()
-  }, [offscreen])
+    // `mounted` : le panneau n'existe qu'après montage, il faut alors le placer hors écran
+  }, [offscreen, mounted])
 
   const buildOpenTimeline = useCallback(() => {
     const panel = panelRef.current
@@ -287,7 +293,7 @@ export function StaggeredMenu({
       </button>
 
       {/* Overlay + Backdrop — portalled to body to escape stacking contexts */}
-      {typeof document !== 'undefined' && createPortal(
+      {mounted && createPortal(
         <>
           {/* Backdrop */}
           {open && (
