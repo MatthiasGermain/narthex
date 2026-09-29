@@ -24,10 +24,15 @@ const normalizeEmail: CollectionBeforeChangeHook = ({ data }) => {
   return data
 }
 
-/** Un compte utilisateur ne peut être rattaché qu'à une seule fiche membre. */
+/**
+ * Un compte utilisateur ne peut être rattaché qu'à une seule fiche membre.
+ * Seul un rattachement qui change est contrôlé : les doublons hérités des
+ * anciens bugs restent modifiables le temps d'être nettoyés.
+ */
 const enforceSingleUserLink: CollectionBeforeChangeHook = async ({ req, data, originalDoc }) => {
   const userId = getRelId(data.user)
   if (!userId) return data
+  if (userId === getRelId(originalDoc?.user)) return data
 
   const { docs } = await req.payload.find({
     collection: 'members',
