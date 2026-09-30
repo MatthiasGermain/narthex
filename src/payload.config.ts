@@ -4,6 +4,7 @@ import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
+import type { FieldAccess } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
@@ -23,6 +24,9 @@ import { Invitations } from './collections/Invitations'
 import { Groups } from './collections/Groups'
 import { Gatherings } from './collections/Gatherings'
 import { isSuperAdminCheck } from './access/roles'
+
+/** Champs réservés au super-admin (contourné par overrideAccess côté serveur). */
+const superAdminFieldAccess: FieldAccess = ({ req }) => isSuperAdminCheck(req.user)
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -70,6 +74,20 @@ export default buildConfig({
       tenantsSlug: 'churches',
       tenantField: { name: 'church' },
       userHasAccessToAllTenants: (user) => isSuperAdminCheck(user),
+      // Le plugin laisse `tenants` sans accès de champ par défaut : n'importe
+      // quel compte pouvait alors s'ajouter une autre église en modifiant son
+      // propre document. Les flux applicatifs passent par overrideAccess, qui
+      // court-circuite l'accès de champ — seul l'appel HTTP direct est bloqué.
+      tenantsArrayField: {
+        arrayFieldAccess: {
+          create: superAdminFieldAccess,
+          update: superAdminFieldAccess,
+        },
+        tenantFieldAccess: {
+          create: superAdminFieldAccess,
+          update: superAdminFieldAccess,
+        },
+      },
       collections: {
         events: {
           customTenantField: true,

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, readOwnChurch } from '../access'
+import { isAdmin, readOwnChurch, ownChurchFilterOptions } from '../access'
 import { assignCreatedBy } from './hooks'
 
 export const Groups: CollectionConfig = {
@@ -53,6 +53,7 @@ export const Groups: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       index: true,
       label: 'Église',

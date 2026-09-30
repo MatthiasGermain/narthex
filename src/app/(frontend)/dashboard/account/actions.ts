@@ -51,16 +51,30 @@ export async function updateMyProfile(memberId: number, data: {
   }
 }
 
-export async function requestPasswordReset(email: string) {
+/**
+ * Envoie un lien de réinitialisation au compte connecté.
+ *
+ * L'email vient de la session, jamais du client : l'action était appelable avec
+ * n'importe quelle adresse. Et elle passait par un `fetch` HTTP depuis le
+ * serveur, donc sans `x-forwarded-for` — les 3 tentatives / 15 min du middleware
+ * étaient comptées sur une clé unique partagée par tous les utilisateurs, si
+ * bien que n'importe qui pouvait bloquer la réinitialisation de tout le monde.
+ */
+export async function requestPasswordReset() {
+  const payload = await getPayload({ config })
+  const headers = await getHeaders()
+  const { user } = await payload.auth({ headers })
+
+  if (!user?.email) return { success: false, error: 'Non authentifié' }
+
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL || ''}/api/users/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+    await payload.forgotPassword({
+      collection: 'users',
+      data: { email: user.email },
     })
-    return { success: res.ok }
+    return { success: true }
   } catch (err) {
     console.error(err)
-    return { success: false }
+    return { success: false, error: "L'email n'a pas pu être envoyé" }
   }
 }

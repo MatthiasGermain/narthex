@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAuthenticated, readOwnChurch } from '../access'
+import { isAuthenticated, readOwnChurch, ownChurchFilterOptions } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
 export const Rooms: CollectionConfig = {
@@ -96,6 +96,7 @@ export const Rooms: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       index: true,
       label: 'Église',

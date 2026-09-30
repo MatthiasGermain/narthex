@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, Where } from 'payload'
-import { isAuthenticated, getUserTenantIDs } from '../access'
+import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
 const publicOnly: Where = { visibility: { equals: 'public' } }
@@ -146,6 +146,7 @@ export const Sermons: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       index: true,
       label: 'Église',

@@ -111,11 +111,11 @@ export function AccountProfileForm({ memberId, defaultValues, churchRoleLabel }:
     if (!defaultValues.email) return
     setResetLoading(true)
     try {
-      const result = await requestPasswordReset(defaultValues.email)
+      const result = await requestPasswordReset()
       if (result.success) {
         toast.success('Un email de réinitialisation a été envoyé')
       } else {
-        toast.error('Erreur lors de l\'envoi')
+        toast.error(result.error || 'Erreur lors de l\'envoi')
       }
     } catch (err) {
       console.error(err)

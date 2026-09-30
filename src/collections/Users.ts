@@ -6,18 +6,28 @@ import type {
   CollectionBeforeChangeHook,
   CollectionBeforeOperationHook,
   FieldAccess,
+  Where,
 } from 'payload'
+import { APIError } from 'payload'
 import { isSuperAdmin, isSuperAdminCheck, belongsToChurch, getUserTenantIDs } from '../access'
 import { RESET_LINK_EXPIRATION, SIGNUP_LINK_EXPIRATION } from '../lib/password-link'
 
-const updateScopedToTenant = ({ req: { user } }: { req: { user: unknown } }) => {
+/**
+ * Un bénévole ne gère que son propre compte ; un admin gère ceux de son église.
+ * Sans la restriction au seul titulaire, tout membre pouvait modifier l'email ou
+ * le mot de passe de n'importe quel compte de l'église — seul `role` était
+ * protégé — et donc prendre la main sur un compte admin.
+ */
+const updateScopedToTenant: Access = ({ req: { user } }) => {
   if (!user) return false
-  const u = user as { role?: string }
+  const u = user as { id?: number; role?: string }
   if (u.role === 'super-admin') return true
-  // admin-church can only update users in their own tenant
   const tenantIDs = getUserTenantIDs(user)
-  if (tenantIDs.length === 0) return false
-  return { 'tenants.tenant': { in: tenantIDs } }
+  const scope: Where =
+    u.role === 'admin-church' && tenantIDs.length > 0
+      ? { 'tenants.tenant': { in: tenantIDs } }
+      : { id: { equals: u.id } }
+  return scope
 }
 
 const canEditRole: FieldAccess = ({ req: { user } }) => {
@@ -68,6 +78,33 @@ const enforceAllowedRole: CollectionBeforeChangeHook = async ({ req, operation, 
         data.role = originalDoc?.role || 'volunteer'
       }
     }
+  }
+
+  return data
+}
+
+/**
+ * Le mot de passe n'appartient qu'à son titulaire, et un compte super-admin
+ * n'est modifiable que par un super-admin. Un admin qui veut dépanner un membre
+ * lui envoie un lien de réinitialisation plutôt que de choisir son mot de passe.
+ */
+const protectCredentials: CollectionBeforeChangeHook = ({ req, operation, data, originalDoc }) => {
+  if (operation !== 'update') return data
+
+  const currentUser = req.user as { id?: number; role?: string } | undefined
+  // Pas d'utilisateur : appel serveur de confiance (acceptation d'invitation…).
+  if (!currentUser || currentUser.role === 'super-admin') return data
+  if (originalDoc?.id === currentUser.id) return data
+
+  if (originalDoc?.role === 'super-admin') {
+    throw new APIError('Un compte super-admin ne peut être modifié que par un super-admin.', 403)
+  }
+
+  if (data.password !== undefined) {
+    throw new APIError(
+      "Le mot de passe ne se change que depuis le compte concerné. Envoyez plutôt un lien de réinitialisation.",
+      403,
+    )
   }
 
   return data
@@ -201,14 +238,24 @@ const setPasswordLinkExpiration: CollectionBeforeOperationHook = ({ args, operat
   return args
 }
 
-// Update lastLogin timestamp on every login (no req to avoid re-triggering role validation)
+/**
+ * Horodate la connexion. `req` est transmis pour rester dans la transaction du
+ * login : une transaction séparée se bloquerait sur la ligne que la connexion
+ * vient de verrouiller. Les hooks beforeChange sont inoffensifs ici — le user
+ * modifie son propre document.
+ */
 const updateLastLogin: CollectionAfterLoginHook = async ({ req, user }) => {
-  await req.payload.update({
-    collection: 'users',
-    id: user.id,
-    data: { lastLogin: new Date().toISOString() },
-    overrideAccess: true,
-  }).catch(() => null)
+  await req.payload
+    .update({
+      collection: 'users',
+      id: user.id,
+      data: { lastLogin: new Date().toISOString() },
+      overrideAccess: true,
+      req,
+    })
+    .catch((err) => {
+      req.payload.logger.error(`lastLogin non mis à jour pour le compte ${user.id} : ${err}`)
+    })
   return user
 }
 
@@ -272,9 +319,9 @@ export const Users: CollectionConfig = {
   },
   hooks: {
     beforeOperation: [setPasswordLinkExpiration],
-    beforeChange: [enforceAllowedRole, assignTenantOnCreate],
+    beforeChange: [protectCredentials, enforceAllowedRole, assignTenantOnCreate],
     afterChange: [autoCreateMember],
-    // afterLogin: [updateLastLogin], // TODO: fix infinite loop
+    afterLogin: [updateLastLogin],
   },
   access: {
     admin: ({ req }) => isSuperAdminCheck(req.user),

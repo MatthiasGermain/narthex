@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, readOwnChurch } from '../access'
+import { isAdmin, readOwnChurch, ownChurchFilterOptions } from '../access'
 import { assignCreatedBy } from './hooks'
 
 /**
@@ -92,6 +92,7 @@ export const Gatherings: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       index: true,
       label: 'Église',

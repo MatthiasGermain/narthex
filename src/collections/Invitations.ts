@@ -3,7 +3,7 @@ import type {
   CollectionBeforeChangeHook,
   CollectionAfterChangeHook,
 } from 'payload'
-import { isAdmin, isSuperAdmin, readOwnChurch, getUserTenantIDs } from '../access'
+import { isAdmin, isSuperAdmin, getUserTenantIDs, ownChurchFilterOptions } from '../access'
 import { generateInvitationEmail } from '../lib/emails/invitation'
 
 /** Génère token + expiresAt, assigne invitedBy et church, valide les doublons */
@@ -25,11 +25,14 @@ const prepareInvitation: CollectionBeforeChangeHook = async ({ req, operation, d
   // Auto-set invitedBy
   data.invitedBy = user.id
 
-  // Auto-set church depuis le tenant de l'admin
-  if (!data.church) {
+  // L'église vient toujours du tenant de l'admin, jamais du client : sinon un
+  // admin de A peut créer chez B une invitation qui donne les droits admin.
+  if (user.role !== 'super-admin') {
     const tenantIDs = getUserTenantIDs(user)
     if (tenantIDs.length === 0) throw new Error('Aucune église associée')
     data.church = tenantIDs[0]
+  } else if (!data.church) {
+    throw new Error('Précisez l\'église de cette invitation')
   }
 
   // Générer token et expiration
@@ -117,9 +120,13 @@ export const Invitations: CollectionConfig = {
     afterChange: [sendInvitationEmail],
   },
   access: {
-    read: readOwnChurch,
+    // Réservé aux admins : une invitation en attente porte un token utilisable
+    // et un rôle attribué. Ouverte à tout membre, elle permettait de lire le
+    // token, d'y passer `role: admin-church` puis de l'accepter.
+    // Le plugin multi-tenant ajoute la contrainte d'église par-dessus.
+    read: isAdmin,
     create: isAdmin,
-    update: readOwnChurch,
+    update: isAdmin,
     delete: isSuperAdmin,
   },
   fields: [
@@ -198,6 +205,7 @@ export const Invitations: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       label: 'Église',
       admin: {

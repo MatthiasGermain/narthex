@@ -1,8 +1,30 @@
-import type { Access } from 'payload'
+import type { Access, FilterOptions } from 'payload'
 
 type UserWithTenants = {
   role?: string
   tenants?: Array<{ tenant: string | number | { id: string | number } }>
+}
+
+/**
+ * `filterOptions` du champ `church` des collections en `customTenantField`.
+ *
+ * Payload n'applique aucune contrainte `where` à la création (executeAccess ne
+ * teste que la véracité du résultat), et le plugin multi-tenant ne pose son
+ * propre garde-fou que sur le champ tenant qu'il injecte lui-même. C'est donc
+ * ici que se joue l'isolation à la création : sans cela, n'importe quel compte
+ * peut poster `church: <autre église>`.
+ *
+ * Attention : contrairement à l'access control, `filterOptions` est validé même
+ * quand l'appelant passe `overrideAccess: true`. L'absence de `req.user` signale
+ * un appel serveur de confiance (acceptation d'invitation, hooks internes) et
+ * doit rester permissive, sinon ces flux cassent.
+ */
+export const ownChurchFilterOptions: FilterOptions = ({ req }) => {
+  const user = req.user as UserWithTenants | undefined
+  if (!user || user.role === 'super-admin') return true
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length === 0) return false
+  return { id: { in: tenantIDs } }
 }
 
 /**

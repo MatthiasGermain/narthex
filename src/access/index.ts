@@ -6,4 +6,10 @@ export {
   canDeleteOwned,
   isAuthenticated,
 } from './roles'
-export { belongsToChurch, readOwnChurch, readOwnChurchById, getUserTenantIDs } from './tenant'
+export {
+  belongsToChurch,
+  readOwnChurch,
+  readOwnChurchById,
+  getUserTenantIDs,
+  ownChurchFilterOptions,
+} from './tenant'

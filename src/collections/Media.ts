@@ -29,7 +29,10 @@ export const Media: CollectionConfig = {
     ],
   },
   upload: {
-    mimeTypes: ['image/*'],
+    // Pas de `image/*` : il accepte image/svg+xml, servi inline depuis l'origine
+    // de l'app — un SVG est un document scriptable, donc un XSS stocké
+    // uploadable par n'importe quel compte connecté.
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
     imageSizes: [
       {
         name: 'thumbnail',

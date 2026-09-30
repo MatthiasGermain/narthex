@@ -3,6 +3,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { resolveTenant } from '@/lib/tenant'
+import { checkUserTenantAccess } from '@/lib/tenant-check'
 
 interface ImportRow {
   firstName: string
@@ -24,6 +25,9 @@ export async function importMembers(rows: ImportRow[]): Promise<ImportResult[]> 
   const { user, tenant } = await resolveTenant()
   if (!user || !tenant) throw new Error('Non authentifié')
   if (user.role !== 'super-admin' && user.role !== 'admin-church') throw new Error('Accès refusé')
+  // L'église vient du header Host : sans ce contrôle, un admin de A importe
+  // des membres chez B en postant l'action sur le domaine de B.
+  if (!checkUserTenantAccess(user, tenant.id)) throw new Error('Accès refusé')
 
   const payload = await getPayload({ config })
 

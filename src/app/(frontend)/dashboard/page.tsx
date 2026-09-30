@@ -36,9 +36,6 @@ export default async function DashboardPage({ searchParams }: Props) {
   const todayISO = getTodayISO()
 
   // Plage du mois
-  const startOfMonth = isCurrentMonth
-    ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    : new Date(year, month, 1)
   const endOfMonth = new Date(year, month + 1, 0)
 
   const pad = (n: number) => String(n).padStart(2, '0')

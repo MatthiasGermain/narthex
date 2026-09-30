@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, readOwnChurch } from '../access'
+import { isAdmin, readOwnChurch, ownChurchFilterOptions } from '../access'
 import { assignCreatedBy } from './hooks'
 import { validateEndTime, validateTime } from '../lib/time'
 import { PLAN_LOCK_DURATION_S } from '../lib/plan-lock'
@@ -181,6 +181,7 @@ export const ServicePlans: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       index: true,
       label: 'Église',

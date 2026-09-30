@@ -31,7 +31,6 @@ export default async function CalendarPage({ searchParams }: Props) {
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth()
 
   // Plage du mois complet (toujours jour 1 → dernier jour)
-  const startOfMonth = new Date(year, month, 1)
   const endOfMonth = new Date(year, month + 1, 0)
 
   const pad = (n: number) => String(n).padStart(2, '0')

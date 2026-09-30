@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, Where } from 'payload'
-import { isAuthenticated, getUserTenantIDs } from '../access'
+import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 import { validateEndTime, validateTime } from '../lib/time'
 
@@ -158,6 +158,7 @@ export const Events: CollectionConfig = {
       name: 'church',
       type: 'relationship',
       relationTo: 'churches',
+      filterOptions: ownChurchFilterOptions,
       required: true,
       index: true,
       label: 'Église',
