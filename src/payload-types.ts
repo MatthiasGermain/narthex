@@ -536,7 +536,7 @@ export interface Member {
   birthDate?: string | null;
   photo?: (number | null) | Media;
   /**
-   * Lier ce membre à un compte utilisateur Narthex (optionnel)
+   * Compte Narthex de ce membre (optionnel). Un compte ne peut être rattaché qu'à une seule fiche, et supprimer la fiche supprime le compte.
    */
   user?: (number | null) | User;
   /**

@@ -11,6 +11,7 @@ import type {
 import { APIError } from 'payload'
 import { isSuperAdmin, isSuperAdminCheck, belongsToChurch, getUserTenantIDs } from '../access'
 import { RESET_LINK_EXPIRATION, SIGNUP_LINK_EXPIRATION } from '../lib/password-link'
+import { generatePasswordLinkEmail } from '../lib/emails/password-link'
 
 /**
  * Un bénévole ne gère que son propre compte ; un admin gère ceux de son église.
@@ -287,6 +288,7 @@ export const Users: CollectionConfig = {
 
         // Résoudre le custom domain de la church pour rediriger l'utilisateur
         let baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
+        let churchName: string | undefined
         if (req && user?.tenants?.length) {
           const tenantId = typeof user.tenants[0].tenant === 'object'
             ? user.tenants[0].tenant.id
@@ -302,26 +304,14 @@ export const Users: CollectionConfig = {
             if (customDomain) {
               baseUrl = `https://${customDomain}`
             }
+            churchName = church?.name as string | undefined
           }
         }
 
-        const url = `${baseUrl}/login/reset-password?token=${token}`
-        if (req?.context.passwordLinkIsSignup) {
-          return `
-            <h2>Bienvenue sur Narthex</h2>
-            <p>Cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
-            <p><a href="${url}">Définir mon mot de passe</a></p>
-            <p>Ce lien expire dans 48 heures.</p>
-            <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
-          `
-        }
-        return `
-          <h2>Réinitialisation de votre mot de passe</h2>
-          <p>Cliquez sur le lien ci-dessous pour choisir un nouveau mot de passe :</p>
-          <p><a href="${url}">Réinitialiser mon mot de passe</a></p>
-          <p>Ce lien expire dans 3 heures.</p>
-          <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
-        `
+        // `signup=1` ne sert qu'aux libellés de la page : c'est le token qui fait foi.
+        const isSignup = req?.context.passwordLinkIsSignup === true
+        const url = `${baseUrl}/login/reset-password?token=${token}${isSignup ? '&signup=1' : ''}`
+        return generatePasswordLinkEmail({ url, isSignup, churchName })
       },
     },
   },

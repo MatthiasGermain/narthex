@@ -4,7 +4,15 @@ import { ArrowLeft } from 'lucide-react'
 
 import { ResetPasswordForm } from '@/components/reset-password-form'
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ signup?: string }>
+}) {
+  // Même page pour un premier mot de passe et pour un renouvellement : seuls
+  // les libellés changent, d'après le lien reçu par email.
+  const isSignup = (await searchParams).signup === '1'
+
   return (
     <div className="flex min-h-screen bg-violet/10">
       <div className="m-auto w-full max-w-md px-4 py-12">
@@ -21,14 +29,16 @@ export default function ResetPasswordPage() {
           <div className="p-8">
             <div className="text-center mb-8">
               <h1 className="font-heading font-black text-xl uppercase tracking-wide text-raisin">
-                Nouveau mot de passe
+                {isSignup ? 'Bienvenue' : 'Nouveau mot de passe'}
               </h1>
               <p className="text-sm text-raisin/50 mt-2">
-                Choisissez un nouveau mot de passe
+                {isSignup
+                  ? 'Créez votre mot de passe pour accéder à votre espace'
+                  : 'Choisissez un nouveau mot de passe'}
               </p>
             </div>
             <Suspense>
-              <ResetPasswordForm />
+              <ResetPasswordForm isSignup={isSignup} />
             </Suspense>
           </div>
         </div>
