@@ -61,15 +61,20 @@ const enforceAllowedRole: CollectionBeforeChangeHook = async ({ req, operation, 
     }
 
     if (operation === 'update' && data.role !== undefined) {
+      // On remet le rôle d'origine au lieu de le supprimer : à ce stade Payload a
+      // déjà fusionné le document dans `data`, et un `role` absent échoue ensuite
+      // à la validation `required` — toute mise à jour de son propre compte par
+      // un admin-church partait en erreur, même sans toucher au rôle.
+
       // Cannot change own role
       if (originalDoc?.id === currentUser.id) {
-        delete data.role
+        data.role = originalDoc.role
         return data
       }
 
       // Cannot modify a super-admin's role
       if (originalDoc?.role === 'super-admin') {
-        delete data.role
+        data.role = originalDoc.role
         return data
       }
 
@@ -241,21 +246,24 @@ const setPasswordLinkExpiration: CollectionBeforeOperationHook = ({ args, operat
 /**
  * Horodate la connexion. `req` est transmis pour rester dans la transaction du
  * login : une transaction séparée se bloquerait sur la ligne que la connexion
- * vient de verrouiller. Les hooks beforeChange sont inoffensifs ici — le user
- * modifie son propre document.
+ * vient de verrouiller.
+ *
+ * Écriture directe par l'adaptateur, comme Payload le fait pour la session et
+ * les tentatives de connexion — surtout pas `payload.update` : s'il échoue
+ * (hook, validation), il annule la transaction portée par `req`, donc celle du
+ * login. La session tout juste créée disparaît alors que la réponse reste un
+ * 200 avec un token, et l'utilisateur est renvoyé sur /login sans message.
+ * Un `.catch` n'y change rien, l'annulation a déjà eu lieu.
  */
 const updateLastLogin: CollectionAfterLoginHook = async ({ req, user }) => {
-  await req.payload
-    .update({
-      collection: 'users',
-      id: user.id,
-      data: { lastLogin: new Date().toISOString() },
-      overrideAccess: true,
-      req,
-    })
-    .catch((err) => {
-      req.payload.logger.error(`lastLogin non mis à jour pour le compte ${user.id} : ${err}`)
-    })
+  await req.payload.db.updateOne({
+    collection: 'users',
+    id: user.id,
+    // updatedAt: null — une connexion n'est pas une modification du compte
+    data: { lastLogin: new Date().toISOString(), updatedAt: null },
+    req,
+    returning: false,
+  })
   return user
 }
 
