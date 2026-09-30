@@ -13,4 +13,6 @@ export {
   getUserTenantIDs,
   ownChurchFilterOptions,
   sameChurchFilterOptions,
+  readPublicScopedToHost,
+  readPublicOrOwnChurch,
 } from './tenant'

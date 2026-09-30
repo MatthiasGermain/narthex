@@ -1,21 +1,11 @@
-import type { Access, CollectionConfig, Where } from 'payload'
-import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
+import type { CollectionConfig } from 'payload'
+import {
+  isAuthenticated,
+  ownChurchFilterOptions,
+  readPublicOrOwnChurch,
+  sameChurchFilterOptions,
+} from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
-
-const publicOnly: Where = { visibility: { equals: 'public' } }
-
-const readPublicOrOwnChurch: Access = ({ req: { user } }) => {
-  if (!user) return publicOnly
-  if ((user as { role?: string }).role === 'super-admin') return true
-  const tenantIDs = getUserTenantIDs(user)
-  if (tenantIDs.length === 0) return publicOnly
-  return {
-    or: [
-      { visibility: { equals: 'public' } },
-      { church: { in: tenantIDs } },
-    ],
-  }
-}
 
 export const Sermons: CollectionConfig = {
   slug: 'sermons',

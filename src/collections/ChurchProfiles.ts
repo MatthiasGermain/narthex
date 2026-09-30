@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '../access'
+import { isAdmin, readPublicScopedToHost } from '../access'
 import { cacheTags, safeRevalidateTag } from '../lib/cache'
 
 function revalidateProfile(doc: { church?: number | { id: number } | null }) {
@@ -15,7 +15,7 @@ export const ChurchProfiles: CollectionConfig = {
     description: 'Contenu public : présentation, horaires, contact',
   },
   access: {
-    read: () => true,
+    read: readPublicScopedToHost,
     create: isAdmin,
     update: isAdmin,
     delete: isAdmin,

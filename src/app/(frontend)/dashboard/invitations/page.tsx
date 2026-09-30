@@ -1,6 +1,8 @@
 import { MailPlus, Mail, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { PAGE_SIZE, UPCOMING_LIMIT, parsePage, type SearchParams } from '@/lib/pagination'
+import { Pagination } from '@/components/features/pagination'
 import { isAdminRole } from '@/access'
 import { formatDateNumeric } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +15,11 @@ const STATUS_CONFIG = {
   expired: { label: 'Expirée', icon: XCircle, className: 'bg-muted text-muted-foreground border-muted' },
 } as const
 
-export default async function InvitationsPage() {
+export default async function InvitationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
@@ -22,29 +28,43 @@ export default async function InvitationsPage() {
   const isAdmin = isAdminRole(user)
   if (!isAdmin) return null
 
-  const { docs: invitations } = await payload.find({
-    collection: 'invitations',
-    where: {
-      church: { equals: tenant.id },
-    },
-    sort: '-createdAt',
-    limit: 100,
-    depth: 1,
-    overrideAccess: false,
-    user,
-  })
+  const params = await searchParams
+  const page = parsePage(params.page)
 
-  // Marquer les invitations expirées côté affichage
+  // Les invitations en attente sont peu nombreuses par nature ; c'est
+  // l'historique des acceptées et expirées qui s'accumule.
+  const [pendingResult, othersResult] = await Promise.all([
+    payload.find({
+      collection: 'invitations',
+      where: { church: { equals: tenant.id }, status: { equals: 'pending' } },
+      sort: '-createdAt',
+      limit: UPCOMING_LIMIT,
+      depth: 1,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'invitations',
+      where: { church: { equals: tenant.id }, status: { not_equals: 'pending' } },
+      sort: '-createdAt',
+      limit: PAGE_SIZE,
+      page,
+      depth: 1,
+      overrideAccess: false,
+      user,
+    }),
+  ])
+
+  // Une invitation encore « en attente » mais dont la date est passée s'affiche
+  // comme expirée, et rejoint donc l'historique.
   const now = new Date()
-  const displayInvitations = invitations.map((inv) => {
-    if (inv.status === 'pending' && new Date(inv.expiresAt) < now) {
-      return { ...inv, status: 'expired' as const }
-    }
-    return inv
-  })
+  const relabelled = pendingResult.docs.map((inv) =>
+    new Date(inv.expiresAt) < now ? { ...inv, status: 'expired' as const } : inv,
+  )
 
-  const pending = displayInvitations.filter((inv) => inv.status === 'pending')
-  const others = displayInvitations.filter((inv) => inv.status !== 'pending')
+  const pending = relabelled.filter((inv) => inv.status === 'pending')
+  const others = [...relabelled.filter((inv) => inv.status !== 'pending'), ...othersResult.docs]
+  const displayInvitations = [...pending, ...others]
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,13 +99,22 @@ export default async function InvitationsPage() {
           {others.length > 0 && (
             <div className="flex flex-col gap-3">
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Historique ({others.length})
+                Historique ({othersResult.totalDocs})
               </h2>
               <div className="flex flex-col gap-2">
                 {others.map((inv) => (
                   <InvitationCard key={inv.id} invitation={inv} />
                 ))}
               </div>
+
+              <Pagination
+                basePath="/dashboard/invitations"
+                searchParams={params}
+                page={page}
+                totalPages={othersResult.totalPages}
+                label="de l'historique des invitations"
+                className="pt-2"
+              />
             </div>
           )}
         </div>

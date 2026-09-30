@@ -89,29 +89,26 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // --- Laisser passer les autres routes /api/ sans tenant resolution ---
-  if (pathname.startsWith('/api/')) {
-    return NextResponse.next()
-  }
+  // --- Tenant resolution, y compris sur /api/ ---
+  // L'API en était exclue, si bien qu'un appel anonyme à /api/church-profiles
+  // ou /api/events renvoyait le contenu de toutes les églises.
+  const requestHeaders = new Headers(req.headers)
 
-  // --- Tenant resolution pour les pages frontend ---
+  // Ces en-têtes font autorité côté serveur : on efface toute valeur entrante
+  // avant de poser la nôtre, sinon un client les forge et change d'église.
+  requestHeaders.delete(TENANT_HEADER)
+  requestHeaders.delete(CUSTOM_DOMAIN_HEADER)
+
   const slug = extractTenantSlug(req)
-
   if (slug) {
-    const requestHeaders = new Headers(req.headers)
     requestHeaders.set(TENANT_HEADER, slug)
-    return NextResponse.next({ request: { headers: requestHeaders } })
+  } else {
+    // Domaine custom → passer le domaine au serveur pour résolution
+    const customDomain = extractCustomDomain(req)
+    if (customDomain) requestHeaders.set(CUSTOM_DOMAIN_HEADER, customDomain)
   }
 
-  // Domaine custom → passer le domaine au serveur pour résolution
-  const customDomain = extractCustomDomain(req)
-  if (customDomain) {
-    const requestHeaders = new Headers(req.headers)
-    requestHeaders.set(CUSTOM_DOMAIN_HEADER, customDomain)
-    return NextResponse.next({ request: { headers: requestHeaders } })
-  }
-
-  return NextResponse.next()
+  return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 export const config = {

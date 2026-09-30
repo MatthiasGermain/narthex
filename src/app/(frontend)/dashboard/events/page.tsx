@@ -4,8 +4,11 @@ import Image from 'next/image'
 import { CalendarPlus, CalendarX, CalendarRange } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
-import { formatDateShort, formatTime, isPast } from '@/lib/format'
+import { formatDateShort, formatTime } from '@/lib/format'
+import { getTodayISO } from '@/lib/date-utils'
 import { canDeleteOwned, isAdminRole } from '@/access'
+import { PAGE_SIZE, UPCOMING_LIMIT, parsePage, type SearchParams } from '@/lib/pagination'
+import { Pagination } from '@/components/features/pagination'
 import { getThumbUrl } from '@/lib/image-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -93,26 +96,48 @@ function GatheringHeadingRow({
   )
 }
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
   if (!tenant) return null
 
-  const { docs: events } = await payload.find({
-    collection: 'events',
-    where: {
-      church: { equals: tenant.id },
-    },
-    sort: 'date',
-    limit: 100,
-    depth: 1,
-    overrideAccess: false,
-    user,
-  })
+  const params = await searchParams
+  const pastPage = parsePage(params.passes)
+  const today = getTodayISO()
 
-  const upcoming = events.filter((e) => !isPast(e.date))
-  const past = events.filter((e) => isPast(e.date)).reverse()
+  // Deux requêtes plutôt qu'un tri unique découpé en mémoire : avec un seul
+  // `sort: 'date'` plafonné, les événements passés finissaient par occuper
+  // toute la page et les événements à venir disparaissaient de la liste.
+  const [upcomingResult, pastResult] = await Promise.all([
+    payload.find({
+      collection: 'events',
+      where: { church: { equals: tenant.id }, date: { greater_than_equal: today } },
+      sort: 'date',
+      limit: UPCOMING_LIMIT,
+      depth: 1,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'events',
+      where: { church: { equals: tenant.id }, date: { less_than: today } },
+      sort: '-date',
+      limit: PAGE_SIZE,
+      page: pastPage,
+      depth: 1,
+      overrideAccess: false,
+      user,
+    }),
+  ])
+
+  const upcoming = upcomingResult.docs
+  const past = pastResult.docs
+  const isEmpty = upcoming.length === 0 && pastResult.totalDocs === 0
 
   const isAdmin = isAdminRole(user)
   const upcomingIds = upcoming.map((e) => e.id)
@@ -131,7 +156,7 @@ export default async function EventsPage() {
         </Link>
       </div>
 
-      {events.length === 0 ? (
+      {isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
           <CalendarX className="h-12 w-12 mb-4 opacity-50" />
           <p className="text-lg font-medium">Aucun événement</p>
@@ -399,6 +424,15 @@ export default async function EventsPage() {
               </div>
             )}
           </div>
+
+          <Pagination
+            basePath="/dashboard/events"
+            searchParams={params}
+            param="passes"
+            page={pastPage}
+            totalPages={pastResult.totalPages}
+            label="des événements passés"
+          />
         </>
       )}
     </div>

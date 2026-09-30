@@ -3,7 +3,10 @@ import { Plus, ClipboardList } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
 import { isAdminRole } from '@/access'
-import { formatDate, isPast } from '@/lib/format'
+import { formatDate } from '@/lib/format'
+import { getTodayISO } from '@/lib/date-utils'
+import { PAGE_SIZE, UPCOMING_LIMIT, parsePage, type SearchParams } from '@/lib/pagination'
+import { Pagination } from '@/components/features/pagination'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,7 +28,7 @@ import {
 } from '@/components/features/bulk-select'
 
 interface Props {
-  searchParams: Promise<{ view?: string }>
+  searchParams: Promise<SearchParams>
 }
 
 /** Formulation pour lecteurs d'écran : « Ouvrir / Sélectionner … ». */
@@ -45,39 +48,51 @@ export default async function PlanningPage({ searchParams }: Props) {
   if (!user) return null
   if (!tenant) return null
 
-  const { view: viewParam } = await searchParams
-  const view: ViewMode = viewParam === 'detailed' ? 'detailed' : 'compact'
+  const params = await searchParams
+  const view: ViewMode = params.view === 'detailed' ? 'detailed' : 'compact'
+  const pastPage = parsePage(params.passes)
+  const today = getTodayISO()
 
   const isAdmin = isAdminRole(user)
   const shareToken =
     (tenant as { planningShareToken?: string | null }).planningShareToken ?? null
 
-  const { docs: plans } = await payload.find({
-    collection: 'service-plans',
-    where: {
-      church: { equals: tenant.id },
-    },
-    // Les 50 plus récents (à venir compris), pas les 50 plus anciens
-    sort: '-date',
-    limit: 50,
-    depth: 2,
-    overrideAccess: false,
-    user,
-  })
+  // Les cultes à venir tiennent en une page ; seule l'archive grandit
+  // indéfiniment, c'est donc elle qui est paginée.
+  const [upcomingResult, pastResult] = await Promise.all([
+    payload.find({
+      collection: 'service-plans',
+      where: { church: { equals: tenant.id }, date: { greater_than_equal: today } },
+      sort: '-date',
+      limit: UPCOMING_LIMIT,
+      depth: 2,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'service-plans',
+      where: { church: { equals: tenant.id }, date: { less_than: today } },
+      sort: '-date',
+      limit: PAGE_SIZE,
+      page: pastPage,
+      depth: 2,
+      overrideAccess: false,
+      user,
+    }),
+  ])
 
   // Du jour le plus récent au plus ancien ; un même jour, dans l'ordre de la
   // journée (10h avant 14h). Sans heure : en fin de journée.
   const dayOf = (iso: string) => iso.slice(0, 10)
-  plans.sort(
-    (a, b) =>
-      dayOf(b.date).localeCompare(dayOf(a.date)) ||
-      (a.time || '99:99').localeCompare(b.time || '99:99'),
-  )
+  const byDayThenTime = (a: { date: string; time?: string | null }, b: { date: string; time?: string | null }) =>
+    dayOf(b.date).localeCompare(dayOf(a.date)) ||
+    (a.time || '99:99').localeCompare(b.time || '99:99')
 
-  const upcoming = plans.filter((p) => !isPast(p.date))
-  const past = plans.filter((p) => isPast(p.date))
+  const upcoming = [...upcomingResult.docs].sort(byDayThenTime)
+  const past = [...pastResult.docs].sort(byDayThenTime)
   const upcomingIds = upcoming.map((p) => p.id)
   const pastIds = past.map((p) => p.id)
+  const hasPlans = upcoming.length > 0 || pastResult.totalDocs > 0
 
   return (
     <BulkSelectProvider>
@@ -85,7 +100,7 @@ export default async function PlanningPage({ searchParams }: Props) {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Cultes</h1>
         <div className="flex items-center gap-2">
-          {plans.length > 0 && (
+          {hasPlans && (
             <div className="inline-flex rounded-lg border border-raisin/10 p-0.5 text-sm">
               <Link
                 href="/dashboard/planning"
@@ -119,7 +134,7 @@ export default async function PlanningPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {plans.length === 0 ? (
+      {!hasPlans ? (
         <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
           <ClipboardList className="h-12 w-12 mb-4 opacity-50" />
           <p className="text-lg font-medium">Aucun culte</p>
@@ -346,6 +361,15 @@ export default async function PlanningPage({ searchParams }: Props) {
               </div>
             )}
           </div>
+
+          <Pagination
+            basePath="/dashboard/planning"
+            searchParams={params}
+            param="passes"
+            page={pastPage}
+            totalPages={pastResult.totalPages}
+            label="des cultes passés"
+          />
         </>
       )}
     </div>

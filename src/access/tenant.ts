@@ -1,8 +1,30 @@
-import type { Access, FilterOptions } from 'payload'
+import type { Access, FilterOptions, PayloadRequest, Where } from 'payload'
 
 type UserWithTenants = {
   role?: string
   tenants?: Array<{ tenant: string | number | { id: string | number } }>
+}
+
+/**
+ * Église du domaine appelé, d'après les en-têtes posés par le middleware.
+ *
+ * On passe par `req.payload` plutôt que par `lib/tenant` : ce module est
+ * importé par les collections, donc par la config Payload, et l'importer
+ * créerait un cycle.
+ */
+async function getHostChurchId(req: PayloadRequest): Promise<number | null> {
+  const slug = req.headers.get('x-tenant-slug')
+  const domain = req.headers.get('x-custom-domain')
+  if (!slug && !domain) return null
+
+  const { docs } = await req.payload.find({
+    collection: 'churches',
+    where: slug ? { slug: { equals: slug } } : { domain: { equals: domain } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  })
+  return (docs[0]?.id as number | undefined) ?? null
 }
 
 /**
@@ -25,6 +47,45 @@ export const ownChurchFilterOptions: FilterOptions = ({ req }) => {
   const tenantIDs = getUserTenantIDs(user)
   if (tenantIDs.length === 0) return false
   return { id: { in: tenantIDs } }
+}
+
+/**
+ * Lecture d'un contenu public, isolée par domaine.
+ *
+ * Le middleware laissait passer `/api/` sans résoudre le tenant : un appel
+ * anonyme à `/api/church-profiles` renvoyait les adresses, emails et téléphones
+ * de toutes les églises. Les pages publiques ne sont pas concernées, elles
+ * filtrent explicitement par église en `overrideAccess`.
+ */
+export const readPublicScopedToHost: Access = async ({ req }) => {
+  const user = req.user as UserWithTenants | undefined
+  if (user?.role === 'super-admin') return true
+
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length > 0) return { church: { in: tenantIDs } }
+
+  const churchId = await getHostChurchId(req)
+  return churchId == null ? false : { church: { equals: churchId } }
+}
+
+/**
+ * Contenus qui ont une visibilité publique ou interne (événements, prédications).
+ * Un visiteur anonyme ne voit que le public de l'église du domaine appelé ;
+ * un membre voit tout ce qui relève de la sienne.
+ */
+export const readPublicOrOwnChurch: Access = async ({ req }) => {
+  const user = req.user as UserWithTenants | undefined
+  if (user?.role === 'super-admin') return true
+
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length > 0) return { church: { in: tenantIDs } }
+
+  const churchId = await getHostChurchId(req)
+  if (churchId == null) return false
+  const scoped: Where = {
+    and: [{ visibility: { equals: 'public' } }, { church: { equals: churchId } }],
+  }
+  return scoped
 }
 
 /**

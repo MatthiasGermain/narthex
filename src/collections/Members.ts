@@ -224,6 +224,10 @@ export const Members: CollectionConfig = {
       name: 'user',
       type: 'relationship',
       relationTo: 'users',
+      // Un compte = une fiche, garanti par Postgres et plus seulement par le
+      // hook. Les fiches sans compte restent possibles : un index unique
+      // autorise autant de NULL qu'on veut.
+      unique: true,
       label: 'Compte utilisateur',
       admin: {
         description:

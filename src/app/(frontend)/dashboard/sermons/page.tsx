@@ -3,6 +3,8 @@ import Image from 'next/image'
 import { Plus, BookOpen } from 'lucide-react'
 
 import { resolveTenant } from '@/lib/tenant'
+import { PAGE_SIZE, parsePage, type SearchParams } from '@/lib/pagination'
+import { Pagination } from '@/components/features/pagination'
 import { formatDateShort } from '@/lib/format'
 import { canDeleteOwned } from '@/access'
 import { getThumbUrl } from '@/lib/image-utils'
@@ -25,19 +27,27 @@ function getPreacherName(preacher: unknown): string | null {
   return [p.firstName, p.lastName].filter(Boolean).join(' ')
 }
 
-export default async function SermonsPage() {
+export default async function SermonsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
   const { payload, user, tenant } = await resolveTenant()
 
   if (!user) return null
   if (!tenant) return null
 
-  const { docs: sermons } = await payload.find({
+  const params = await searchParams
+  const page = parsePage(params.page)
+
+  const { docs: sermons, totalPages } = await payload.find({
     collection: 'sermons',
     where: {
       church: { equals: tenant.id },
     },
     sort: '-date',
-    limit: 100,
+    limit: PAGE_SIZE,
+    page,
     depth: 1,
     overrideAccess: false,
     user,
@@ -161,6 +171,14 @@ export default async function SermonsPage() {
               </Table>
             </div>
           </div>
+
+          <Pagination
+            basePath="/dashboard/sermons"
+            searchParams={params}
+            page={page}
+            totalPages={totalPages}
+            label="des prédications"
+          />
         </>
       )}
     </div>
