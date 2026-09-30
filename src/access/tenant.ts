@@ -28,6 +28,29 @@ export const ownChurchFilterOptions: FilterOptions = ({ req }) => {
 }
 
 /**
+ * `filterOptions` des relations internes à une église : la salle d'un
+ * événement, les membres d'un groupe, le média d'une fiche…
+ *
+ * On se cale sur l'église du document lui-même quand elle est connue — Payload
+ * fusionne le document d'origine dans `data`, elle l'est donc à la mise à jour —
+ * ce qui vaut aussi pour un super-admin. À la création d'un document sans
+ * `church`, on retombe sur les églises du compte.
+ */
+export const sameChurchFilterOptions: FilterOptions = ({ req, data }) => {
+  const raw = (data as { church?: unknown } | undefined)?.church
+  const docChurch = typeof raw === 'object' && raw !== null ? (raw as { id?: unknown }).id : raw
+  if (typeof docChurch === 'number' || typeof docChurch === 'string') {
+    return { church: { equals: docChurch } }
+  }
+
+  const user = req.user as UserWithTenants | undefined
+  if (!user || user.role === 'super-admin') return true
+  const tenantIDs = getUserTenantIDs(user)
+  if (tenantIDs.length === 0) return false
+  return { church: { in: tenantIDs } }
+}
+
+/**
  * Extrait les IDs de tenants (églises) depuis user.tenants[].
  */
 export function getUserTenantIDs(user: unknown): (string | number)[] {

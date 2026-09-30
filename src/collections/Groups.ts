@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, readOwnChurch, ownChurchFilterOptions } from '../access'
+import { isAdmin, readOwnChurch, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
 import { assignCreatedBy } from './hooks'
 
 export const Groups: CollectionConfig = {
@@ -33,6 +33,7 @@ export const Groups: CollectionConfig = {
       name: 'members',
       type: 'relationship',
       relationTo: 'members',
+      filterOptions: sameChurchFilterOptions,
       hasMany: true,
       label: 'Membres',
     },
@@ -40,6 +41,7 @@ export const Groups: CollectionConfig = {
       name: 'leader',
       type: 'relationship',
       relationTo: 'members',
+      filterOptions: sameChurchFilterOptions,
       label: 'Responsable',
     },
     {

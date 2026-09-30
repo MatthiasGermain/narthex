@@ -57,6 +57,7 @@ export default async function AccountPage() {
         <div className="p-5">
           <AccountProfileForm
             memberId={member.id}
+            churchId={tenant.id}
             defaultValues={{
               firstName: member.firstName,
               lastName: member.lastName,

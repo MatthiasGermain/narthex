@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, readOwnChurch, ownChurchFilterOptions } from '../access'
+import { isAdmin, readOwnChurch, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
 import { assignCreatedBy } from './hooks'
 import { validateEndTime, validateTime } from '../lib/time'
 import { PLAN_LOCK_DURATION_S } from '../lib/plan-lock'
@@ -73,6 +73,7 @@ export const ServicePlans: CollectionConfig = {
           name: 'room',
           type: 'relationship',
           relationTo: 'rooms',
+          filterOptions: sameChurchFilterOptions,
           label: 'Salle',
           admin: { width: '34%' },
         },
@@ -82,6 +83,7 @@ export const ServicePlans: CollectionConfig = {
       name: 'gathering',
       type: 'relationship',
       relationTo: 'gatherings',
+      filterOptions: sameChurchFilterOptions,
       index: true,
       label: 'Fait partie de',
       admin: {
@@ -109,6 +111,7 @@ export const ServicePlans: CollectionConfig = {
           name: 'members',
           type: 'relationship',
           relationTo: 'members',
+          filterOptions: sameChurchFilterOptions,
           hasMany: true,
           label: 'Membres assignés',
         },
@@ -116,6 +119,7 @@ export const ServicePlans: CollectionConfig = {
           name: 'group',
           type: 'relationship',
           relationTo: 'groups',
+          filterOptions: sameChurchFilterOptions,
           label: 'Groupe assigné',
           admin: {
             description: 'Pour les rôles servis par un groupe entier (ex : Louange)',
@@ -145,6 +149,7 @@ export const ServicePlans: CollectionConfig = {
           name: 'hiddenEvents',
           type: 'relationship',
           relationTo: 'events',
+          filterOptions: sameChurchFilterOptions,
           hasMany: true,
           label: 'Événements à ne pas annoncer',
         },
@@ -152,6 +157,7 @@ export const ServicePlans: CollectionConfig = {
           name: 'hiddenGatherings',
           type: 'relationship',
           relationTo: 'gatherings',
+          filterOptions: sameChurchFilterOptions,
           hasMany: true,
           label: 'Rassemblements à ne pas annoncer',
         },

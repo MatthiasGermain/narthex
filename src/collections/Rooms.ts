@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAuthenticated, readOwnChurch, ownChurchFilterOptions } from '../access'
+import { isAuthenticated, readOwnChurch, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
 export const Rooms: CollectionConfig = {
@@ -68,6 +68,7 @@ export const Rooms: CollectionConfig = {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Photo de la salle',
     },
     {

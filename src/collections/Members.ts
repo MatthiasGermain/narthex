@@ -6,7 +6,7 @@ import type {
   CollectionConfig,
 } from 'payload'
 import { APIError } from 'payload'
-import { isAdmin, readOwnChurch, ownChurchFilterOptions } from '../access'
+import { isAdmin, readOwnChurch, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
 import { CHURCH_ROLE_OPTIONS } from '../lib/church-roles'
 import { assignCreatedBy } from './hooks'
 
@@ -217,6 +217,7 @@ export const Members: CollectionConfig = {
       name: 'photo',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Photo',
     },
     {

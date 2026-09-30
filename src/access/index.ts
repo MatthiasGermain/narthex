@@ -12,4 +12,5 @@ export {
   readOwnChurchById,
   getUserTenantIDs,
   ownChurchFilterOptions,
+  sameChurchFilterOptions,
 } from './tenant'

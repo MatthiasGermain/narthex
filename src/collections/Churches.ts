@@ -147,6 +147,9 @@ export const Churches: CollectionConfig = {
               relationTo: 'rooms',
               label: 'Salle des cultes',
               admin: { width: '34%' },
+              // Ici le document EST l'église : on se cale sur son id, pas sur
+              // un champ `church` qui n'existe pas sur cette collection.
+              filterOptions: ({ id }) => (id == null ? true : { church: { equals: id } }),
             },
           ],
         },

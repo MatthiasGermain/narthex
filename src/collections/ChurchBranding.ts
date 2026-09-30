@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin, readOwnChurch } from '../access'
+import { isAdmin, readOwnChurch, sameChurchFilterOptions } from '../access'
 import { cacheTags, safeRevalidateTag } from '../lib/cache'
 
 function revalidateBranding(doc: { church?: number | { id: number } | null }) {
@@ -35,6 +35,7 @@ export const ChurchBranding: CollectionConfig = {
       name: 'logo',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Logo',
       admin: {
         description: 'Logo principal (PNG/SVG, fond transparent, min 200×60)',
@@ -44,6 +45,7 @@ export const ChurchBranding: CollectionConfig = {
       name: 'favicon',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Favicon / Pictogramme',
       admin: {
         description: 'Icône carrée pour l\'onglet navigateur (PNG/SVG, 192×192 recommandé)',

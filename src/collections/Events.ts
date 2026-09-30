@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, Where } from 'payload'
-import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions } from '../access'
+import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 import { validateEndTime, validateTime } from '../lib/time'
 
@@ -44,6 +44,7 @@ export const Events: CollectionConfig = {
       name: 'gathering',
       type: 'relationship',
       relationTo: 'gatherings',
+      filterOptions: sameChurchFilterOptions,
       index: true,
       label: 'Fait partie de',
       admin: {
@@ -97,6 +98,7 @@ export const Events: CollectionConfig = {
       name: 'room',
       type: 'relationship',
       relationTo: 'rooms',
+      filterOptions: sameChurchFilterOptions,
       label: 'Salle',
       admin: {
         description: 'Salle utilisée pour cet événement (optionnel)',
@@ -119,6 +121,7 @@ export const Events: CollectionConfig = {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Image / Affiche',
       admin: {
         description: 'Image optionnelle pour illustrer l\'événement',
@@ -128,6 +131,7 @@ export const Events: CollectionConfig = {
       name: 'posterPdf',
       type: 'upload',
       relationTo: 'documents',
+      filterOptions: sameChurchFilterOptions,
       label: 'Affiche en PDF',
       admin: {
         description: 'PDF optionnel, affiché sur la page de l\'événement',

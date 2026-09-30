@@ -11,6 +11,7 @@ import { updateMyProfile, requestPasswordReset } from '@/app/(frontend)/dashboar
 
 interface AccountProfileFormProps {
   memberId: number
+  churchId: number
   defaultValues: {
     firstName: string
     lastName: string
@@ -24,7 +25,7 @@ interface AccountProfileFormProps {
   churchRoleLabel?: string
 }
 
-export function AccountProfileForm({ memberId, defaultValues, churchRoleLabel }: AccountProfileFormProps) {
+export function AccountProfileForm({ memberId, churchId, defaultValues, churchRoleLabel }: AccountProfileFormProps) {
   const [loading, setLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [firstName, setFirstName] = useState(defaultValues.firstName)
@@ -54,6 +55,11 @@ export function AccountProfileForm({ memberId, defaultValues, churchRoleLabel }:
     try {
       const formData = new FormData()
       formData.append('file', file)
+      // `church` est requis sur les médias : sans lui l'upload était rejeté.
+      formData.append('_payload', JSON.stringify({
+        alt: `${firstName} ${lastName}`.trim() || file.name,
+        church: churchId,
+      }))
 
       const res = await fetch('/api/media', {
         method: 'POST',

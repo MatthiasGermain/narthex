@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, Where } from 'payload'
-import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions } from '../access'
+import { isAuthenticated, getUserTenantIDs, ownChurchFilterOptions, sameChurchFilterOptions } from '../access'
 import { assignCreatedBy, isAdminOrCreator } from './hooks'
 
 const publicOnly: Where = { visibility: { equals: 'public' } }
@@ -59,6 +59,7 @@ export const Sermons: CollectionConfig = {
           name: 'preacher',
           type: 'relationship',
           relationTo: 'members',
+          filterOptions: sameChurchFilterOptions,
           label: 'Prédicateur',
           admin: {
             width: '50%',
@@ -91,6 +92,7 @@ export const Sermons: CollectionConfig = {
       name: 'audioFile',
       type: 'upload',
       relationTo: 'audio-media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Fichier audio',
       admin: {
         description: 'MP3 ou autre fichier audio de la prédication',
@@ -116,6 +118,7 @@ export const Sermons: CollectionConfig = {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: sameChurchFilterOptions,
       label: 'Image / Couverture',
       admin: {
         description: 'Image optionnelle pour illustrer la prédication',
