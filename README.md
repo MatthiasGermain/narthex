@@ -1,67 +1,88 @@
-# Payload Blank Template
+# Narthex
 
-This template comes configured with the bare minimum to get started on anything you need.
+Plateforme tout-en-un pour les églises : chaque église obtient son propre site public et un espace de gestion (membres, événements, cultes, prédications), le tout servi par une seule application multi-tenant.
 
-## Quick start
+**État** : en phase de test. Une église teste actuellement la plateforme en conditions réelles. La page [narthex.dev](https://narthex.dev) présente le projet.
 
-This template can be deployed directly from our Cloud hosting and it will setup MongoDB and cloud S3 object storage for media.
+<!-- À COMPLÉTER : une capture du dashboard et une du site public d'une église, ex. docs/screenshots/dashboard.png -->
 
-## Quick Start - local setup
+## Fonctionnalités
 
-To spin up this template locally, follow these steps:
+- **Site public par église**, sur un sous-domaine ou un domaine personnalisé : présentation, événements, prédications, annonces, page « nous rendre visite », formulaire de contact.
+- **Espace de gestion** :
+  - membres (fiches, import CSV, invitations par e-mail) et groupes ;
+  - événements et rassemblements, réservation de salles avec alerte de conflit d'horaire ;
+  - planning des cultes (rôles par culte, verrou d'édition, planning partagé) et feuille d'annonces ;
+  - prédications avec fichiers audio, documents partagés ;
+  - identité visuelle de chaque église (logo, couleurs) appliquée à son site.
+- **Trois rôles** : super-admin de la plateforme, admin d'église, bénévole. Les droits sont vérifiés côté serveur, collection par collection.
 
-### Clone
+## Stack
 
-After you click the `Deploy` button above, you'll want to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
+| | |
+|---|---|
+| Application | Next.js (App Router), React, TypeScript |
+| CMS / back-office | Payload CMS 3, plugin multi-tenant, éditeur Lexical |
+| Base de données | PostgreSQL |
+| UI | Tailwind CSS, Radix UI, Framer Motion |
+| E-mails | Resend |
+| Tests | Vitest (intégration), Playwright (E2E et parcours par rôle) |
+| Déploiement | Docker multi-étapes, GitHub Actions, GitHub Container Registry, Caddy (HTTPS), droplet DigitalOcean |
 
-### Development
+## Architecture
 
-1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URL` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+```mermaid
+flowchart LR
+    visitor["Visiteur<br/>eglise.narthex.dev"] --> caddy
+    admin["Admin / bénévole"] --> caddy
+    caddy["Caddy<br/>HTTPS, domaines"] --> app
 
-3. `pnpm install && pnpm dev` to install dependencies and start the dev server
-4. open `http://localhost:3000` to open the app in your browser
+    subgraph droplet["Droplet DigitalOcean (Docker Compose)"]
+        caddy
+        app["Next.js + Payload<br/>middleware : église résolue<br/>depuis le domaine"]
+    end
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+    app --> db[("PostgreSQL")]
+    app --> resend["Resend<br/>e-mails"]
+```
 
-#### Docker (Optional)
+- **Multi-tenant** : un middleware Next.js identifie l'église à partir du sous-domaine ou du domaine personnalisé, puis le plugin multi-tenant de Payload limite chaque requête aux données de cette église.
+- **Isolation des données** : les relations entre documents sont verrouillées à l'église du document, et les uploads et les comptes sont isolés par église.
+- **Sécurité** : limitation de débit sur les routes sensibles (connexion, mot de passe oublié, invitations, API), CORS et CSRF limités aux domaines déclarés.
 
-If you prefer to use Docker for local development instead of a local MongoDB instance, the provided docker-compose.yml file can be used.
+## Déploiement continu
 
-To do so, follow these steps:
+À chaque push sur `master`, GitHub Actions :
 
-- Modify the `MONGODB_URL` in your `.env` file to `mongodb://127.0.0.1/<dbname>`
-- Modify the `docker-compose.yml` file's `MONGODB_URL` to match the above `<dbname>`
-- Run `docker-compose up` to start the database, optionally pass `-d` to run in the background.
+1. construit l'image Docker et la publie sur GitHub Container Registry ;
+2. se connecte en SSH au droplet ;
+3. récupère la nouvelle image et redémarre le service avec Docker Compose.
 
-## How it works
+## Tests
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+```bash
+pnpm test:int   # tests d'intégration (Vitest)
+pnpm test:e2e   # tests end-to-end (Playwright)
+```
 
-### Collections
+Les tests par rôle (`tests/roles/`) rejouent les parcours d'un visiteur anonyme, d'un bénévole et d'un admin d'église, et vérifient ce que chacun peut voir et modifier.
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+## Lancer en local
 
-- #### Users (Authentication)
+Prérequis : Node.js 20, pnpm, une base PostgreSQL.
 
-  Users are auth-enabled collections that have access to the admin panel.
+```bash
+cp .env.example .env    # renseigner DATABASE_URL et PAYLOAD_SECRET
+pnpm install
+pnpm dev                # http://localhost:3000, admin sur /admin
+```
 
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/main/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+Pour tester un site d'église en local : `http://<slug-eglise>.localhost:3000`.
 
-- #### Media
+## Documentation de conception
 
-  This is the uploads enabled collection. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
+Le cadrage du projet est dans [`docs/planning-artifacts`](docs/planning-artifacts) : PRD, architecture et découpage en epics.
 
-### Docker
+## Auteur
 
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
-
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
-
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
-
-## Questions
-
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+Conçu et développé par [Matthias Germain](https://github.com/MatthiasGermain).
