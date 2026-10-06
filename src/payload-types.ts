@@ -82,6 +82,7 @@ export interface Config {
     invitations: Invitation;
     groups: Group;
     gatherings: Gathering;
+    suggestions: Suggestion;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -104,6 +105,7 @@ export interface Config {
     invitations: InvitationsSelect<false> | InvitationsSelect<true>;
     groups: GroupsSelect<false> | GroupsSelect<true>;
     gatherings: GatheringsSelect<false> | GatheringsSelect<true>;
+    suggestions: SuggestionsSelect<false> | SuggestionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -690,6 +692,21 @@ export interface Invitation {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "suggestions".
+ */
+export interface Suggestion {
+  id: number;
+  status: 'nouvelle' | 'en-cours' | 'faite' | 'ecartee';
+  kind: 'probleme' | 'amelioration' | 'idee';
+  message: string;
+  page?: string | null;
+  church: number | Church;
+  author?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -771,6 +788,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'gatherings';
         value: number | Gathering;
+      } | null)
+    | ({
+        relationTo: 'suggestions';
+        value: number | Suggestion;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1191,6 +1212,20 @@ export interface GatheringsSelect<T extends boolean = true> {
   description?: T;
   createdBy?: T;
   church?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "suggestions_select".
+ */
+export interface SuggestionsSelect<T extends boolean = true> {
+  status?: T;
+  kind?: T;
+  message?: T;
+  page?: T;
+  church?: T;
+  author?: T;
   updatedAt?: T;
   createdAt?: T;
 }

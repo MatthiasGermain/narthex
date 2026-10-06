@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ExternalLink } from 'lucide-react'
 import { LogoutButton } from '@/components/logout-button'
 import { DashboardStaggeredMenu } from '@/components/layout/dashboard-staggered-menu'
+import { SuggestionDialog } from '@/components/features/suggestions/suggestion-dialog'
 
 interface HeaderProps {
   churchName: string
@@ -37,8 +38,9 @@ export function Header({ churchName, userEmail, userName, userRole }: HeaderProp
         </Link>
       </div>
 
-      {/* Droite — Avatar + Déconnexion */}
+      {/* Droite — Suggestion + Avatar + Déconnexion */}
       <div className="flex items-center gap-3">
+        {userRole !== 'volunteer' && <SuggestionDialog />}
         <Link
           href="/dashboard/account"
           className="hidden md:flex items-center gap-2.5 rounded-full hover:bg-muted/60 px-2 py-1 transition-colors"

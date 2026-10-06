@@ -23,6 +23,7 @@ import { Documents } from './collections/Documents'
 import { Invitations } from './collections/Invitations'
 import { Groups } from './collections/Groups'
 import { Gatherings } from './collections/Gatherings'
+import { Suggestions } from './collections/Suggestions'
 import { isSuperAdminCheck } from './access/roles'
 
 /** Champs réservés au super-admin (contourné par overrideAccess côté serveur). */
@@ -52,7 +53,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, AudioMedia, Documents, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members, ServicePlans, Sermons, Invitations, Groups, Gatherings],
+  collections: [Users, Media, AudioMedia, Documents, Churches, ChurchBranding, ChurchProfiles, Events, Rooms, Members, ServicePlans, Sermons, Invitations, Groups, Gatherings, Suggestions],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {
@@ -111,6 +112,10 @@ export default buildConfig({
           customTenantField: true,
         },
         gatherings: {
+          customTenantField: true,
+        },
+        // Pour la suppression en cascade quand une église est supprimée
+        suggestions: {
           customTenantField: true,
         },
         media: {},
